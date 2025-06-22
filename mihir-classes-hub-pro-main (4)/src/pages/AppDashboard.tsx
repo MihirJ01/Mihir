@@ -59,8 +59,6 @@ const AppDashboard = () => {
         );
       case "notes":
         return <NotesSection />;
-      case "work":
-        return <WorkSystem />;
       case "announcements":
         return <Announcements />;
       default:

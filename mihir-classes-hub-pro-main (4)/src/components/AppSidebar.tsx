@@ -54,12 +54,6 @@ const menuItems = [
     adminOnly: false,
   },
   {
-    title: "Student Work",
-    icon: FileText,
-    id: "work",
-    adminOnly: false,
-  },
-  {
     title: "Announcements",
     icon: Megaphone,
     id: "announcements",

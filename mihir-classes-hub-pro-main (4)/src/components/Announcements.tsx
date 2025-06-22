@@ -21,7 +21,11 @@ interface Announcement {
   isGeneral: boolean;
 }
 
-export function Announcements() {
+type AnnouncementsProps = {
+  readOnly?: boolean;
+};
+
+export function Announcements({ readOnly = false }: AnnouncementsProps) {
   const [announcements, setAnnouncements] = useLocalStorage<Announcement[]>("mihir-announcements", []);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [filterPriority, setFilterPriority] = useState("all");
@@ -112,107 +116,109 @@ export function Announcements() {
           <h2 className="text-2xl font-bold text-gray-900">Announcements</h2>
           <p className="text-gray-600">Manage class announcements and notifications</p>
         </div>
-        <div className="flex gap-3">
-          <Button onClick={handleExportToExcel} variant="outline" className="gap-2">
-            <Download className="w-4 h-4" />
-            Export to Excel
-          </Button>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2 bg-blue-600 hover:bg-blue-700">
-                <Plus className="w-4 h-4" />
-                Create Announcement
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Create New Announcement</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                  <Input
-                    value={newAnnouncement.title}
-                    onChange={(e) => setNewAnnouncement({...newAnnouncement, title: e.target.value})}
-                    placeholder="Enter announcement title"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
-                  <Textarea
-                    value={newAnnouncement.content}
-                    onChange={(e) => setNewAnnouncement({...newAnnouncement, content: e.target.value})}
-                    placeholder="Enter announcement content..."
-                    rows={4}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-                  <Select onValueChange={(value) => setNewAnnouncement({...newAnnouncement, priority: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select priority" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Low Priority</SelectItem>
-                      <SelectItem value="medium">Medium Priority</SelectItem>
-                      <SelectItem value="high">High Priority</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    id="isGeneral"
-                    checked={newAnnouncement.isGeneral}
-                    onChange={(e) => setNewAnnouncement({...newAnnouncement, isGeneral: e.target.checked})}
-                    className="w-4 h-4 text-blue-600"
-                  />
-                  <label htmlFor="isGeneral" className="text-sm font-medium text-gray-700">
-                    General announcement (for all students)
-                  </label>
-                </div>
-
-                {!newAnnouncement.isGeneral && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Target Class</label>
-                      <Select onValueChange={(value) => setNewAnnouncement({...newAnnouncement, targetClass: value})}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select class" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {[1,2,3,4,5,6,7,8].map(num => (
-                            <SelectItem key={num} value={num.toString()}>Class {num}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Target Board</label>
-                      <Select onValueChange={(value) => setNewAnnouncement({...newAnnouncement, targetBoard: value})}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select board" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="CBSE">CBSE</SelectItem>
-                          <SelectItem value="State Board">State Board</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                )}
-
-                <Button onClick={handleAddAnnouncement} className="w-full">
+        {!readOnly && (
+          <div className="flex gap-3">
+            <Button onClick={handleExportToExcel} variant="outline" className="gap-2">
+              <Download className="w-4 h-4" />
+              Export to Excel
+            </Button>
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2 bg-blue-600 hover:bg-blue-700">
+                  <Plus className="w-4 h-4" />
                   Create Announcement
                 </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Create New Announcement</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                    <Input
+                      value={newAnnouncement.title}
+                      onChange={(e) => setNewAnnouncement({...newAnnouncement, title: e.target.value})}
+                      placeholder="Enter announcement title"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
+                    <Textarea
+                      value={newAnnouncement.content}
+                      onChange={(e) => setNewAnnouncement({...newAnnouncement, content: e.target.value})}
+                      placeholder="Enter announcement content..."
+                      rows={4}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                    <Select onValueChange={(value) => setNewAnnouncement({...newAnnouncement, priority: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select priority" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low Priority</SelectItem>
+                        <SelectItem value="medium">Medium Priority</SelectItem>
+                        <SelectItem value="high">High Priority</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="isGeneral"
+                      checked={newAnnouncement.isGeneral}
+                      onChange={(e) => setNewAnnouncement({...newAnnouncement, isGeneral: e.target.checked})}
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    <label htmlFor="isGeneral" className="text-sm font-medium text-gray-700">
+                      General announcement (for all students)
+                    </label>
+                  </div>
+
+                  {!newAnnouncement.isGeneral && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Target Class</label>
+                        <Select onValueChange={(value) => setNewAnnouncement({...newAnnouncement, targetClass: value})}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select class" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {[1,2,3,4,5,6,7,8].map(num => (
+                              <SelectItem key={num} value={num.toString()}>Class {num}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Target Board</label>
+                        <Select onValueChange={(value) => setNewAnnouncement({...newAnnouncement, targetBoard: value})}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select board" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="CBSE">CBSE</SelectItem>
+                            <SelectItem value="State Board">State Board</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+
+                  <Button onClick={handleAddAnnouncement} className="w-full">
+                    Create Announcement
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        )}
       </div>
 
       <div className="flex gap-4">
