@@ -1,4 +1,3 @@
-
 import { 
   LayoutDashboard, 
   Users, 
@@ -77,7 +76,7 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
   const { isAdmin } = useAuth();
 
   return (
-    <Sidebar className="border-r border-gray-200">
+    <Sidebar className="border-r border-gray-200 h-screen flex flex-col">
       <SidebarHeader className="border-b border-gray-200 p-6">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -91,7 +90,7 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
           </div>
         </div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="flex-1 overflow-y-auto">
         <SidebarGroup>
           <SidebarGroupLabel className="text-gray-700 font-semibold">Menu</SidebarGroupLabel>
           <SidebarGroupContent>

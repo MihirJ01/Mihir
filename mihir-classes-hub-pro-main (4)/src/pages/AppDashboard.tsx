@@ -83,7 +83,12 @@ const AppDashboard = () => {
           />
         )}
         {/* Sidebar */}
-        <div className={`${isMobile ? 'fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out' : ''} ${isMobile && !sidebarOpen ? '-translate-x-full' : 'translate-x-0'}`}>
+        <div className={`
+          ${isMobile 
+            ? 'fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out' 
+            : 'sticky top-0 h-screen'}
+          ${isMobile && !sidebarOpen ? '-translate-x-full' : 'translate-x-0'}
+        `}>
           <AppSidebar activeSection={activeSection} setActiveSection={(section) => {
             setActiveSection(section);
             if (isMobile) setSidebarOpen(false);
