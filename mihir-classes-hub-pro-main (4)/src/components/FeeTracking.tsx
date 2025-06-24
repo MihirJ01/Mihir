@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { CreditCard, Plus, Download, DollarSign, AlertCircle, Users, Trash2, MoreVertical } from "lucide-react";
+import { CreditCard, Plus, Download, DollarSign, AlertCircle, Users, Trash2, MoreVertical, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { exportToExcel } from "@/utils/excelExport";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
@@ -50,6 +50,8 @@ export function FeeTracking() {
   const [draggingCardId, setDraggingCardId] = useState<string | null>(null);
   const [dragOverDustbin, setDragOverDustbin] = useState(false);
   const [selectedBatch, setSelectedBatch] = useState<string>("all");
+  const [showPending, setShowPending] = useState(false);
+  const [showCollected, setShowCollected] = useState(false);
 
   const students = studentsData as Student[];
   const fees = feeRecordsData as FeeRecord[];
@@ -258,9 +260,21 @@ export function FeeTracking() {
             <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-green-100 shadow-inner">
               <DollarSign className="w-10 h-10 text-green-500" />
               </div>
-            <div>
-              <p className="text-base font-semibold text-green-700">Total Collected</p>
-              <p className="text-3xl font-extrabold text-green-600">₹{totalPaid.toLocaleString()}</p>
+            <div className="flex items-center gap-2">
+              <div>
+                <p className="text-base font-semibold text-green-700">Total Collected</p>
+                <p className="text-3xl font-extrabold text-green-600">
+                  {showCollected ? `₹${totalPaid.toLocaleString()}` : '₹xxxxxxxx'}
+                </p>
+              </div>
+              <button
+                type="button"
+                aria-label={showCollected ? 'Hide total collected' : 'Show total collected'}
+                className="ml-2 p-1 rounded hover:bg-green-200 transition"
+                onClick={() => setShowCollected(v => !v)}
+              >
+                {showCollected ? <EyeOff className="w-6 h-6 text-green-500" /> : <Eye className="w-6 h-6 text-green-500" />}
+              </button>
             </div>
           </CardContent>
         </Card>
@@ -269,9 +283,21 @@ export function FeeTracking() {
             <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-orange-100 shadow-inner">
               <CreditCard className="w-10 h-10 text-orange-500" />
               </div>
-            <div>
-              <p className="text-base font-semibold text-orange-700">Pending Amount</p>
-              <p className="text-3xl font-extrabold text-orange-600">₹{totalPending.toLocaleString()}</p>
+            <div className="flex items-center gap-2">
+              <div>
+                <p className="text-base font-semibold text-orange-700">Pending Amount</p>
+                <p className="text-3xl font-extrabold text-orange-600">
+                  {showPending ? `₹${totalPending.toLocaleString()}` : '₹xxxxxxxx'}
+                </p>
+              </div>
+              <button
+                type="button"
+                aria-label={showPending ? 'Hide pending amount' : 'Show pending amount'}
+                className="ml-2 p-1 rounded hover:bg-orange-200 transition"
+                onClick={() => setShowPending(v => !v)}
+              >
+                {showPending ? <EyeOff className="w-6 h-6 text-orange-500" /> : <Eye className="w-6 h-6 text-orange-500" />}
+              </button>
             </div>
           </CardContent>
         </Card>
