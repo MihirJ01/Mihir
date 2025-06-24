@@ -99,63 +99,70 @@ export function UserDashboard() {
       {/* Decorative gradient lines */}
       <div className="absolute top-1/4 left-0 w-2 h-24 bg-gradient-to-b from-blue-400 to-transparent opacity-30 -z-10"></div>
       <div className="absolute bottom-1/4 right-0 w-2 h-32 bg-gradient-to-t from-yellow-400 to-transparent opacity-30 -z-10"></div>
-      <div className="sticky top-0 z-30 bg-white/70 backdrop-blur shadow-sm border-b border-blue-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center py-3">
-          <div className="flex gap-6">
+      <div className="sticky top-0 z-30 bg-gradient-to-r from-blue-500 to-blue-400 shadow-md border-b border-blue-200 rounded-b-2xl">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 flex flex-col sm:flex-row justify-between items-center py-2 gap-3 sm:gap-0">
+          <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto justify-center sm:justify-start">
+            <span className="text-2xl sm:text-3xl mr-1 sm:mr-2">👤</span>
+            <div>
+              <div className="text-white font-extrabold text-base sm:text-lg md:text-2xl drop-shadow">User Dashboard</div>
+              <div className="text-blue-100 font-medium text-xs sm:text-sm -mt-1">Welcome, {student?.name || user?.name}!</div>
+            </div>
+          </div>
+          <div className="flex gap-3 sm:gap-6 items-center w-full sm:w-auto justify-center sm:justify-end">
             <div className="flex flex-col items-center">
-              <Button variant="ghost" size="icon" onClick={() => setShowMemories(true)} aria-label="Memories" className="rounded-full bg-blue-50 hover:bg-blue-100 shadow-md">
-                <Video className="w-6 h-6 text-blue-600" />
+              <Button variant="ghost" size="icon" onClick={() => setShowMemories(true)} aria-label="Memories" className="rounded-full bg-blue-100 hover:bg-blue-200 shadow-md">
+                <Video className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
               </Button>
-              <span className="text-xs text-gray-700 mt-1">Memories</span>
+              <span className="text-[10px] sm:text-xs text-white mt-1">Memories</span>
             </div>
             <div className="flex flex-col items-center">
-              <Button variant="ghost" size="icon" onClick={() => setShowNotes(true)} aria-label="Notes" className="rounded-full bg-blue-50 hover:bg-blue-100 shadow-md">
-                <BookOpen className="w-6 h-6 text-blue-600" />
+              <Button variant="ghost" size="icon" onClick={() => setShowNotes(true)} aria-label="Notes" className="rounded-full bg-blue-100 hover:bg-blue-200 shadow-md">
+                <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
               </Button>
-              <span className="text-xs text-gray-700 mt-1">Notes</span>
+              <span className="text-[10px] sm:text-xs text-white mt-1">Notes</span>
             </div>
             <div className="flex flex-col items-center">
-              <Button variant="ghost" size="icon" onClick={() => setShowAnnouncements(true)} aria-label="Announcements" className="rounded-full bg-blue-50 hover:bg-blue-100 shadow-md">
+              <Button variant="ghost" size="icon" onClick={() => setShowAnnouncements(true)} aria-label="Announcements" className="rounded-full bg-blue-100 hover:bg-blue-200 shadow-md">
                 <span className="relative">
-                  <Bell className="w-6 h-6" />
+                  <Bell className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
                   {unread.length > 0 && (
                     <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-600 border-2 border-white" />
                   )}
                 </span>
               </Button>
-              <span className="text-xs text-gray-700 mt-1">Announcements</span>
+              <span className="text-[10px] sm:text-xs text-white mt-1">Announcements</span>
             </div>
+            <Button onClick={logout} variant="outline" className="rounded-full bg-white/80 hover:bg-blue-50 shadow-md ml-2 sm:ml-4 text-xs sm:text-sm px-2 sm:px-4">Logout</Button>
           </div>
-          <Button onClick={logout} variant="outline" className="rounded-full bg-white/80 hover:bg-blue-50 shadow-md">Logout</Button>
         </div>
       </div>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
         {!showMemories && !showNotes && !showAnnouncements && (
-          <div className="flex flex-col md:flex-row justify-center items-stretch gap-8 mt-10 animate-float">
+          <div className="flex flex-col lg:flex-row justify-center items-stretch gap-4 sm:gap-8 mt-6 sm:mt-10 animate-float">
             {/* Profile Card */}
-            <Card className="w-full max-w-sm shadow-2xl border-0 bg-white/60 backdrop-blur-lg rounded-3xl p-0 relative overflow-visible flex-shrink-0">
-              <CardContent className="flex flex-col items-center py-8 px-6">
+            <Card className="w-full max-w-xs sm:max-w-sm shadow-2xl border-0 bg-white/60 backdrop-blur-lg rounded-3xl p-0 relative overflow-visible flex-shrink-0 mx-auto lg:mx-0">
+              <CardContent className="flex flex-col items-center py-6 sm:py-8 px-3 sm:px-6">
                 <div className="relative mb-3">
                   <span className="absolute -inset-1 rounded-full bg-blue-300 opacity-30 blur-xl animate-pulse"></span>
-                  <Avatar className="h-24 w-24 border-4 border-blue-400 shadow-xl">
+                  <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-4 border-blue-400 shadow-xl">
                     {profilePhotoUrl ? (
                       <AvatarImage src={profilePhotoUrl} alt="Profile Photo" />
                     ) : (
                       <AvatarFallback>
-                        <span className="text-4xl">👤</span>
+                        <span className="text-3xl sm:text-4xl">👤</span>
                       </AvatarFallback>
                     )}
                   </Avatar>
                 </div>
-                <div className="text-2xl font-extrabold text-gray-900 mb-1 tracking-tight drop-shadow">{student?.name || user?.name}&apos;s Analytics</div>
-                <div className="flex gap-2 mb-2">
-                  <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 font-semibold text-sm shadow">Class {student?.class || user?.class}</span>
-                  <span className="px-3 py-1 rounded-full bg-green-100 text-green-700 font-semibold text-sm shadow">{student?.board || user?.board}</span>
-                  <span className="px-3 py-1 rounded-full bg-purple-100 text-purple-700 font-semibold text-sm shadow">Batch: {student?.batch_time}</span>
+                <div className="text-lg sm:text-2xl font-extrabold text-gray-900 mb-1 tracking-tight drop-shadow text-center">{student?.name || user?.name}&apos;s Analytics</div>
+                <div className="flex flex-wrap gap-2 mb-2 justify-center">
+                  <span className="px-2 sm:px-3 py-1 rounded-full bg-blue-100 text-blue-700 font-semibold text-xs sm:text-sm shadow">Class {student?.class || user?.class}</span>
+                  <span className="px-2 sm:px-3 py-1 rounded-full bg-green-100 text-green-700 font-semibold text-xs sm:text-sm shadow">{student?.board || user?.board}</span>
+                  <span className="px-2 sm:px-3 py-1 rounded-full bg-purple-100 text-purple-700 font-semibold text-xs sm:text-sm shadow">Batch: {student?.batch_time}</span>
                 </div>
-                <div className="mt-4 flex flex-col items-center">
-                  <div className="text-sm text-gray-600 mb-1">Attendance (30 days)</div>
-                  <div className="w-24 h-24">
+                <div className="mt-2 sm:mt-4 flex flex-col items-center">
+                  <div className="text-xs sm:text-sm text-gray-600 mb-1">Attendance (30 days)</div>
+                  <div className="w-16 h-16 sm:w-24 sm:h-24">
                     <CircularProgressbar
                       value={attendancePercentage}
                       text={`${attendancePercentage}%`}
@@ -164,7 +171,7 @@ export function UserDashboard() {
                         textColor: '#2563eb',
                         trailColor: '#dbeafe',
                         backgroundColor: '#fff',
-                        textSize: '1.5rem',
+                        textSize: '1.1rem',
                         pathTransitionDuration: 0.7,
                       })}
                     />
@@ -173,16 +180,16 @@ export function UserDashboard() {
               </CardContent>
             </Card>
             {/* Attendance Graph Card */}
-            <Card className="w-full max-w-2xl shadow-2xl border-0 bg-white/60 backdrop-blur-lg rounded-3xl flex-grow">
-              <CardHeader>
-                <CardTitle>Attendance Trend (Last 4 Weeks)</CardTitle>
+            <Card className="w-full max-w-lg shadow-2xl border-0 bg-white/60 backdrop-blur-lg rounded-3xl flex-grow mx-auto lg:mx-0 mt-4 lg:mt-0">
+              <CardHeader className="px-3 sm:px-6 pt-4 pb-2">
+                <CardTitle className="text-base sm:text-lg">Attendance Trend (Last 4 Weeks)</CardTitle>
               </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
+              <CardContent className="px-3 sm:px-6 pb-4">
+                <ResponsiveContainer width="100%" height={220}>
                   <BarChart data={attendanceChartData}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="week" />
-                    <YAxis />
+                    <XAxis dataKey="week" fontSize={10} />
+                    <YAxis fontSize={10} />
                     <Tooltip />
                     <Legend />
                     <Bar dataKey="present" fill="#10B981" name="Present" />
