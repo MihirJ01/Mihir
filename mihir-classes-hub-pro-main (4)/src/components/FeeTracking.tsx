@@ -182,15 +182,16 @@ export function FeeTracking() {
 
   return (
     <div className="space-y-6 p-4 sm:p-6">
-      {/* Header Section - Responsive */}
-      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
+      {/* Enhanced Section Header */}
+      <section className="bg-blue-50 rounded-xl px-6 py-4 mb-6 shadow-sm border border-blue-100 flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Fee Tracking</h2>
-          <p className="text-sm sm:text-base text-gray-600 mt-1">
-            Manage student fee payments and track individual student fees
-          </p>
+          <h2 className="text-2xl font-bold text-blue-900 flex items-center gap-2">
+            <span role="img" aria-label="fee">💳</span>
+            Fee Tracking
+          </h2>
+          <p className="text-gray-600 text-sm mt-1">Manage student fee payments and track individual student fees</p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 items-center">
           <Button 
             onClick={handleExportToExcel} 
             variant="outline" 
@@ -233,61 +234,52 @@ export function FeeTracking() {
               </div>
             </DialogContent>
           </Dialog>
+          {/* Batch Filter Dropdown - moved here */}
+          <Select value={selectedBatch} onValueChange={setSelectedBatch}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Filter by Batch" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Batches</SelectItem>
+              {batchOptions.map(batch => (
+                <SelectItem key={batch} value={batch}>{batch}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-      </div>
-      {/* Batch Filter Dropdown */}
-      <div className="flex justify-end mb-2">
-        <Select value={selectedBatch} onValueChange={setSelectedBatch}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filter by Batch" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Batches</SelectItem>
-            {batchOptions.map(batch => (
-              <SelectItem key={batch} value={batch}>{batch}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Statistics Cards - Responsive Grid */}
+      </section>
+      {/* Enhanced Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        <Card>
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center gap-3">
-              <DollarSign className="w-6 h-6 sm:w-8 sm:h-8 text-green-500 flex-shrink-0" />
-              <div className="min-w-0">
-                <p className="text-xs sm:text-sm text-gray-600">Total Collected</p>
-                <p className="text-lg sm:text-2xl font-bold text-green-600 truncate">
-                  ₹{totalPaid.toLocaleString()}
-                </p>
-              </div>
+        <Card className="bg-gradient-to-br from-white via-green-50 to-green-100/60 rounded-2xl shadow-md border-0 transition-transform hover:scale-105 hover:shadow-xl">
+          <CardContent className="p-4 sm:p-6 flex items-center gap-4">
+            <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-green-100 shadow-inner">
+              <DollarSign className="w-10 h-10 text-green-500" />
+            </div>
+            <div>
+              <p className="text-base font-semibold text-green-700">Total Collected</p>
+              <p className="text-3xl font-extrabold text-green-600">₹{totalPaid.toLocaleString()}</p>
             </div>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center gap-3">
-              <CreditCard className="w-6 h-6 sm:w-8 sm:h-8 text-orange-500 flex-shrink-0" />
-              <div className="min-w-0">
-                <p className="text-xs sm:text-sm text-gray-600">Pending Amount</p>
-                <p className="text-lg sm:text-2xl font-bold text-orange-600 truncate">
-                  ₹{totalPending.toLocaleString()}
-                </p>
-              </div>
+        <Card className="bg-gradient-to-br from-white via-orange-50 to-orange-100/60 rounded-2xl shadow-md border-0 transition-transform hover:scale-105 hover:shadow-xl">
+          <CardContent className="p-4 sm:p-6 flex items-center gap-4">
+            <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-orange-100 shadow-inner">
+              <CreditCard className="w-10 h-10 text-orange-500" />
+            </div>
+            <div>
+              <p className="text-base font-semibold text-orange-700">Pending Amount</p>
+              <p className="text-3xl font-extrabold text-orange-600">₹{totalPending.toLocaleString()}</p>
             </div>
           </CardContent>
         </Card>
-
-        <Card className="sm:col-span-2 lg:col-span-1">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center gap-3">
-              <AlertCircle className="w-6 h-6 sm:w-8 sm:h-8 text-red-500 flex-shrink-0" />
-              <div className="min-w-0">
-                <p className="text-xs sm:text-sm text-gray-600">Overdue Payments</p>
-                <p className="text-lg sm:text-2xl font-bold text-red-600">{overdueCount}</p>
-              </div>
+        <Card className="bg-gradient-to-br from-white via-red-50 to-red-100/60 rounded-2xl shadow-md border-0 transition-transform hover:scale-105 hover:shadow-xl">
+          <CardContent className="p-4 sm:p-6 flex items-center gap-4">
+            <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-red-100 shadow-inner">
+              <AlertCircle className="w-10 h-10 text-red-500" />
+            </div>
+            <div>
+              <p className="text-base font-semibold text-red-700">Overdue Payments</p>
+              <p className="text-3xl font-extrabold text-red-600">{overdueCount}</p>
             </div>
           </CardContent>
         </Card>

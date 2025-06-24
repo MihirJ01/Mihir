@@ -15,6 +15,13 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { useRef } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export function Memories({ isUserView = false }: { isUserView?: boolean } = {}) {
   const { isAdmin, user } = useAuth();
@@ -158,8 +165,15 @@ export function Memories({ isUserView = false }: { isUserView?: boolean } = {}) 
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold flex items-center gap-2"><Video className="w-7 h-7 text-blue-600" />Memories</h2>
+      {/* Enhanced Section Header */}
+      <section className="bg-blue-50 rounded-xl px-6 py-4 mb-6 shadow-sm border border-blue-100 flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-blue-900 flex items-center gap-2">
+            <span role="img" aria-label="memories">🎞️</span>
+            Memories
+          </h2>
+          <p className="text-gray-600 text-sm mt-1">View and manage class memories and albums</p>
+        </div>
         {/* Only show controls when no album is open */}
         {!selectedAlbum && (
           <div className="flex gap-2 items-center">
@@ -188,7 +202,7 @@ export function Memories({ isUserView = false }: { isUserView?: boolean } = {}) 
             )}
           </div>
         )}
-      </div>
+      </section>
       {showUpload && isAdmin && !isUserView && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
           <Card className="max-w-xl w-full">
@@ -263,6 +277,21 @@ export function Memories({ isUserView = false }: { isUserView?: boolean } = {}) 
           </div>
         </DialogContent>
       </Dialog>
+      {/* Filter Bar (Year) */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-4 bg-white/80 rounded-2xl shadow p-4 border border-blue-100">
+        {/* Example: Year filter, can be extended for albums */}
+        <Select value={sortedYears[0] || ''} onValueChange={() => {}}>
+          <SelectTrigger className="w-48 rounded-xl border-blue-200 bg-white/80 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 shadow-sm text-blue-900 font-semibold">
+            <SelectValue placeholder="All Years" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Years</SelectItem>
+            {sortedYears.map(year => (
+              <SelectItem key={year} value={year}>{year}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
       {/* Album List */}
       {!selectedAlbum && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

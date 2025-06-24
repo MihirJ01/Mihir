@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, Calendar, CreditCard, TrendingUp } from "lucide-react";
@@ -107,46 +106,52 @@ export function Dashboard({ onNavigate }: DashboardProps) {
     <div className="space-y-6">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
         {stats.map((stat, index) => (
-          <Card key={index} className="hover:shadow-lg transition-shadow">
+          <Card
+            key={index}
+            className="transition-transform duration-200 hover:scale-105 hover:shadow-2xl border-0 bg-gradient-to-br from-white via-blue-50 to-blue-100/60 shadow-lg rounded-2xl"
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4 lg:p-6">
-              <CardTitle className="text-xs sm:text-sm font-medium text-gray-600">
+              <CardTitle className="text-xs sm:text-sm font-semibold text-gray-700 tracking-wide">
                 {stat.title}
               </CardTitle>
-              <div className={`w-8 h-8 lg:w-10 lg:h-10 rounded-lg ${stat.color} flex items-center justify-center`}>
-                <stat.icon className="w-4 h-4 lg:w-5 lg:h-5 text-white" />
+              <div className={`w-12 h-12 rounded-xl shadow-md flex items-center justify-center ${stat.color} bg-opacity-90 bg-blur-[2px]`}>
+                <stat.icon className="w-6 h-6 text-white drop-shadow-lg" />
               </div>
             </CardHeader>
             <CardContent className="p-4 lg:p-6 pt-0">
-              <div className="text-lg lg:text-2xl font-bold text-gray-900">{stat.value}</div>
+              <div className="text-2xl lg:text-3xl font-extrabold text-gray-900 tracking-tight">
+                {stat.value}
+              </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader className="p-4 lg:p-6">
-            <CardTitle className="text-base lg:text-lg font-semibold text-gray-900">
+        <Card className="rounded-2xl shadow-md border-0 bg-white/80 backdrop-blur">
+          <CardHeader className="p-4 lg:p-6 border-b border-blue-100">
+            <CardTitle className="text-lg font-bold text-blue-900 tracking-tight flex items-center gap-2">
+              <span role="img" aria-label="activities">📝</span>
               Recent Activities
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 lg:p-6 pt-0">
             <div className="space-y-4">
-              <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                <Users className="w-4 h-4 lg:w-5 lg:h-5 text-blue-600 flex-shrink-0" />
-                <span className="text-xs sm:text-sm text-gray-700">
+              <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400 shadow-sm">
+                <Users className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                <span className="text-sm text-gray-800 font-medium">
                   {totalStudents} students enrolled in the system
                 </span>
               </div>
-              <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-                <Calendar className="w-4 h-4 lg:w-5 lg:h-5 text-green-600 flex-shrink-0" />
-                <span className="text-xs sm:text-sm text-gray-700">
+              <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border-l-4 border-green-400 shadow-sm">
+                <Calendar className="w-5 h-5 text-green-600 flex-shrink-0" />
+                <span className="text-sm text-gray-800 font-medium">
                   Attendance tracking active for today
                 </span>
               </div>
-              <div className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg">
-                <CreditCard className="w-4 h-4 lg:w-5 lg:h-5 text-orange-600 flex-shrink-0" />
-                <span className="text-xs sm:text-sm text-gray-700">
+              <div className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg border-l-4 border-orange-400 shadow-sm">
+                <CreditCard className="w-5 h-5 text-orange-600 flex-shrink-0" />
+                <span className="text-sm text-gray-800 font-medium">
                   Fee collection system operational
                 </span>
               </div>
@@ -154,9 +159,10 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="p-4 lg:p-6">
-            <CardTitle className="text-base lg:text-lg font-semibold text-gray-900">
+        <Card className="rounded-2xl shadow-md border-0 bg-gradient-to-br from-white via-blue-50 to-blue-100/60 backdrop-blur">
+          <CardHeader className="p-4 lg:p-6 border-b border-blue-100">
+            <CardTitle className="text-lg font-bold text-blue-900 tracking-tight flex items-center gap-2">
+              <span role="img" aria-label="actions">⚡</span>
               Quick Actions
             </CardTitle>
           </CardHeader>
@@ -164,26 +170,30 @@ export function Dashboard({ onNavigate }: DashboardProps) {
             <div className="space-y-3">
               <Button 
                 onClick={() => handleQuickAction('attendance')}
-                className="w-full bg-blue-600 text-white hover:bg-blue-700 transition-colors justify-start text-xs sm:text-sm"
+                className="w-full bg-blue-600 text-white hover:bg-blue-700 transition-all justify-start text-sm font-semibold shadow-md rounded-lg flex items-center gap-2"
               >
+                <Calendar className="w-5 h-5" />
                 Mark Today's Attendance
               </Button>
               <Button 
                 onClick={() => handleQuickAction('students')}
-                className="w-full bg-green-600 text-white hover:bg-green-700 transition-colors justify-start text-xs sm:text-sm"
+                className="w-full bg-green-600 text-white hover:bg-green-700 transition-all justify-start text-sm font-semibold shadow-md rounded-lg flex items-center gap-2"
               >
+                <Users className="w-5 h-5" />
                 Add New Student
               </Button>
               <Button 
                 onClick={() => handleQuickAction('announcements')}
-                className="w-full bg-purple-600 text-white hover:bg-purple-700 transition-colors justify-start text-xs sm:text-sm"
+                className="w-full bg-purple-600 text-white hover:bg-purple-700 transition-all justify-start text-sm font-semibold shadow-md rounded-lg flex items-center gap-2"
               >
+                <TrendingUp className="w-5 h-5" />
                 Create Announcement
               </Button>
               <Button 
                 onClick={() => handleQuickAction('export')}
-                className="w-full bg-orange-600 text-white hover:bg-orange-700 transition-colors justify-start text-xs sm:text-sm"
+                className="w-full bg-orange-600 text-white hover:bg-orange-700 transition-all justify-start text-sm font-semibold shadow-md rounded-lg flex items-center gap-2"
               >
+                <CreditCard className="w-5 h-5" />
                 Export Data to Excel
               </Button>
             </div>

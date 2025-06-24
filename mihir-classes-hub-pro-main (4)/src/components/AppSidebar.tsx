@@ -1,71 +1,13 @@
-import { 
-  LayoutDashboard, 
-  Users, 
-  Calendar, 
-  CreditCard, 
-  BookOpen, 
-  FileText, 
-  Megaphone,
-  GraduationCap,
-  Lock,
-  Video
-} from "lucide-react";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarHeader,
-} from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/useAuth";
 
 const menuItems = [
-  {
-    title: "Dashboard",
-    icon: LayoutDashboard,
-    id: "dashboard",
-    adminOnly: true,
-  },
-  {
-    title: "Students",
-    icon: Users,
-    id: "students",
-    adminOnly: true,
-  },
-  {
-    title: "Attendance",
-    icon: Calendar,
-    id: "attendance",
-    adminOnly: true,
-  },
-  {
-    title: "Fee Tracking",
-    icon: CreditCard,
-    id: "fees",
-    adminOnly: true,
-  },
-  {
-    title: "Notes",
-    icon: BookOpen,
-    id: "notes",
-    adminOnly: false,
-  },
-  {
-    title: "Announcements",
-    icon: Megaphone,
-    id: "announcements",
-    adminOnly: false,
-  },
-  {
-    title: "Memories",
-    icon: Video,
-    id: "memories",
-    adminOnly: false,
-  },
+  { title: "Dashboard", icon: "🏠", id: "dashboard", adminOnly: true },
+  { title: "Students", icon: "🧑‍🎓", id: "students", adminOnly: true },
+  { title: "Attendance", icon: "📅", id: "attendance", adminOnly: true },
+  { title: "Fee Tracking", icon: "💳", id: "fees", adminOnly: true },
+  { title: "Notes", icon: "📖", id: "notes", adminOnly: false },
+  { title: "Announcements", icon: "📢", id: "announcements", adminOnly: false },
+  { title: "Memories", icon: "🎞️", id: "memories", adminOnly: false },
 ];
 
 interface AppSidebarProps {
@@ -77,50 +19,36 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
   const { isAdmin } = useAuth();
 
   return (
-    <Sidebar className="border-r border-gray-200 h-screen flex flex-col">
-      <SidebarHeader className="border-b border-gray-200 p-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-            <GraduationCap className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h2 className="font-bold text-lg text-gray-900">Mihir Classes</h2>
-            <p className="text-sm text-gray-600">
-              {isAdmin ? "Admin Panel" : "Management System"}
-            </p>
-          </div>
+    <aside className="min-h-screen w-64 bg-white bg-gradient-to-b from-blue-50 via-white to-white shadow-xl rounded-r-3xl flex flex-col p-6">
+      <div className="flex items-center gap-4 mb-8">
+        <div className="bg-blue-600 rounded-2xl p-3 shadow-lg">
+          <span className="text-white text-3xl">🎓</span>
         </div>
-      </SidebarHeader>
-      <SidebarContent className="flex-1 overflow-y-auto">
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-gray-700 font-semibold">Menu</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton 
-                    onClick={() => setActiveSection(item.id)}
-                    className={`w-full justify-start transition-colors ${
-                      activeSection === item.id 
-                        ? "bg-blue-100 text-blue-700 border-r-2 border-blue-600" 
-                        : "hover:bg-gray-100"
-                    } ${item.adminOnly && !isAdmin ? "opacity-50 cursor-not-allowed" : ""}`}
-                    disabled={item.adminOnly && !isAdmin}
-                  >
-                    <item.icon className="w-5 h-5" />
-                    <span className="flex items-center gap-2">
-                      {item.title}
-                      {item.adminOnly && (
-                        <Lock className="w-3 h-3 text-gray-400" />
-                      )}
-                    </span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-    </Sidebar>
+        <div>
+          <div className="font-extrabold text-xl text-blue-900">Mihir Classes</div>
+          <div className="text-xs text-gray-500 font-medium">{isAdmin ? "Admin Panel" : "Management System"}</div>
+        </div>
+      </div>
+      <div className="border-b border-gray-200 mb-4"></div>
+      <div className="text-xs font-semibold text-gray-500 mb-2">Menu</div>
+      <nav className="flex flex-col gap-1">
+        {menuItems.map(item => (
+          <button
+            key={item.id}
+            onClick={() => setActiveSection(item.id)}
+            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-base font-medium
+              ${activeSection === item.id ? 'bg-blue-100 text-blue-700 font-bold shadow border-l-4 border-blue-500' : 'hover:bg-gray-100 text-gray-700'}
+              ${item.adminOnly && !isAdmin ? 'opacity-50 cursor-not-allowed' : ''}`}
+            disabled={item.adminOnly && !isAdmin}
+          >
+            <span className="text-xl">{item.icon}</span>
+            <span>{item.title}</span>
+            {item.adminOnly && (
+              <span className="ml-auto text-gray-400 text-xs">🔒</span>
+            )}
+          </button>
+        ))}
+      </nav>
+    </aside>
   );
 }

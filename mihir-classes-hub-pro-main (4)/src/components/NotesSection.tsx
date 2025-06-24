@@ -104,10 +104,14 @@ export function NotesSection() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      {/* Enhanced Section Header */}
+      <section className="bg-blue-50 rounded-xl px-6 py-4 mb-6 shadow-sm border border-blue-100 flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Notes Section</h2>
-          <p className="text-gray-600">Manage study notes for CBSE and State Board</p>
+          <h2 className="text-2xl font-bold text-blue-900 flex items-center gap-2">
+            <span role="img" aria-label="notes">📚</span>
+            Notes Section
+          </h2>
+          <p className="text-gray-600 text-sm mt-1">Manage study notes for CBSE and State Board</p>
         </div>
         <div className="flex gap-3">
           <Button onClick={handleExportToExcel} variant="outline" className="gap-2">
@@ -219,12 +223,13 @@ export function NotesSection() {
             </DialogContent>
           </Dialog>
         </div>
-      </div>
+      </section>
 
-      <div className="flex gap-4">
+      {/* Filters Bar */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-4 bg-white/80 rounded-2xl shadow p-4 border border-blue-100">
         <Select value={selectedClass} onValueChange={setSelectedClass}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filter by Class" />
+          <SelectTrigger className="w-48 rounded-xl border-blue-200 bg-white/80 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 shadow-sm text-blue-900 font-semibold">
+            <SelectValue placeholder="All Classes" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Classes</SelectItem>
@@ -233,10 +238,9 @@ export function NotesSection() {
             ))}
           </SelectContent>
         </Select>
-
         <Select value={selectedBoard} onValueChange={setSelectedBoard}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filter by Board" />
+          <SelectTrigger className="w-48 rounded-xl border-blue-200 bg-white/80 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 shadow-sm text-blue-900 font-semibold">
+            <SelectValue placeholder="All Boards" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Boards</SelectItem>
@@ -246,35 +250,42 @@ export function NotesSection() {
         </Select>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredNotes.map((note) => (
-          <Card key={note.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-start justify-between">
-                <div className="flex items-center gap-2">
-                  <BookOpen className="w-5 h-5 text-blue-600" />
-                  <span className="text-lg font-semibold">{note.title}</span>
+      {/* Notes Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        {filteredNotes.map(note => (
+          <Card key={note.id} className="bg-white/90 rounded-2xl shadow-lg border border-blue-100 hover:shadow-2xl transition-all duration-200 transform hover:-translate-y-1 animate-fade-in">
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <CardTitle className="flex items-center gap-2 text-lg font-bold text-blue-900">
+                    <BookOpen className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                    <span className="truncate">{note.title}</span>
+                  </CardTitle>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-lg text-xs font-semibold">Class {note.class}</span>
+                    <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-lg text-xs font-semibold">{note.board}</span>
+                    {note.subject && <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-lg text-xs font-semibold">{note.subject}</span>}
+                  </div>
                 </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="p-1 rounded-full hover:bg-gray-100 focus:outline-none">
-                      <MoreVertical className="w-5 h-5 text-gray-500" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => deleteItem(note.id)} className="text-red-600">Delete</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </CardTitle>
-              <div className="flex gap-2 text-sm text-gray-600">
-                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">Class {note.class}</span>
-                <span className="bg-green-100 text-green-800 px-2 py-1 rounded">{note.board}</span>
-                <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded">{note.subject}</span>
+                <div className="flex-shrink-0 flex items-center">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="text-gray-400 hover:text-blue-600">
+                        <MoreVertical className="w-5 h-5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => deleteItem(note.id)} className="text-red-600">Delete</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="text-gray-700 line-clamp-4 whitespace-pre-line">{renderNoteContent(note.content)}</div>
-              <p className="text-sm text-gray-500 mt-3">Created: {note.created_date}</p>
+            <CardContent className="space-y-2">
+              <div className="text-sm text-gray-800 break-words">
+                {renderNoteContent(note.content)}
+              </div>
+              <div className="text-xs text-gray-500 mt-2">Created: {note.created_date}</div>
             </CardContent>
           </Card>
         ))}

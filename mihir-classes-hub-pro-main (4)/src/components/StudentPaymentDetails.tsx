@@ -1,11 +1,15 @@
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Calendar, DollarSign, CreditCard } from "lucide-react";
+import FeeCardExcelPreview from "./FeeCardExcelPreview";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
+import html2canvas from "html2canvas";
 
 interface Student {
   id: string;
@@ -34,6 +38,7 @@ export function StudentPaymentDetails({ isOpen, onOpenChange, student }: Student
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const previewRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen && student) {
@@ -92,6 +97,15 @@ export function StudentPaymentDetails({ isOpen, onOpenChange, student }: Student
   const yearlyFee = (12 / termDuration) * student.fee_amount;
   const remainingAmount = Math.max(0, yearlyFee - totalPaid);
 
+  const handleExportImage = async () => {
+    if (!previewRef.current) return;
+    const canvas = await html2canvas(previewRef.current, { backgroundColor: '#fff', scale: 2 });
+    const link = document.createElement('a');
+    link.download = `${student.name}_FeeCard.png`;
+    link.href = canvas.toDataURL();
+    link.click();
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -141,6 +155,22 @@ export function StudentPaymentDetails({ isOpen, onOpenChange, student }: Student
             </Card>
           </div>
 
+          <div className="flex justify-end mb-4">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <Download className="w-4 h-4" />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => {/* TODO: Implement PDF export */}}>Export as PDF</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => {/* TODO: Implement Excel export */}}>Export as Excel</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportImage}>Export as Image</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
           {loading ? (
             <div className="text-center py-8">Loading payment history...</div>
           ) : payments.length === 0 ? (
@@ -149,79 +179,9 @@ export function StudentPaymentDetails({ isOpen, onOpenChange, student }: Student
             </div>
           ) : (
             <>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Payment Trend (Cumulative)</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="date" />
-                        <YAxis />
-                        <Tooltip 
-                          formatter={(value: any, name: string) => [
-                            `₹${Number(value).toLocaleString()}`, 
-                            name === 'cumulative' ? 'Total Paid' : 'Payment Amount'
-                          ]}
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="cumulative" 
-                          stroke="#2563eb" 
-                          strokeWidth={2}
-                          dot={{ fill: '#2563eb', strokeWidth: 2, r: 4 }}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Individual Payments</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="date" />
-                        <YAxis />
-                        <Tooltip 
-                          formatter={(value: any) => [`₹${Number(value).toLocaleString()}`, 'Amount']}
-                        />
-                        <Bar dataKey="amount" fill="#10b981" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Payment History</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3 max-h-64 overflow-y-auto">
-                    {payments.map((payment) => (
-                      <div key={payment.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                        <div>
-                          <p className="font-medium">₹{Number(payment.amount_paid).toLocaleString()}</p>
-                          <p className="text-sm text-gray-600">
-                            {new Date(payment.payment_date).toLocaleDateString()} • {payment.payment_method}
-                          </p>
-                          {payment.remarks && (
-                            <p className="text-sm text-gray-500 italic">{payment.remarks}</p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+              <div ref={previewRef}>
+                <FeeCardExcelPreview student={student} payments={payments} logoUrl="/lovable-uploads/image.png" />
+              </div>
             </>
           )}
         </div>

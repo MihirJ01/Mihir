@@ -34,7 +34,7 @@ const BATCH_TIMES = [
 ];
 
 export function StudentManagement() {
-  const { data: studentsData, loading, addItem, updateItem, deleteItem } = useSupabaseData("students", { column: "created_at", ascending: false });
+  const { data: studentsData, loading, addItem, updateItem, deleteItem, refetch: refetchStudents } = useSupabaseData("students", { column: "created_at", ascending: false });
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
@@ -46,6 +46,10 @@ export function StudentManagement() {
   const [editProfilePhoto, setEditProfilePhoto] = useState<File | null>(null);
   const [editProfilePhotoUrl, setEditProfilePhotoUrl] = useState<string>("");
   const [editUploading, setEditUploading] = useState(false);
+  const [draggingStudentId, setDraggingStudentId] = useState<string | null>(null);
+  const [dragOverDustbin, setDragOverDustbin] = useState(false);
+  const [editingField, setEditingField] = useState<{studentId: string, field: string} | null>(null);
+  const [editValue, setEditValue] = useState("");
 
   const students = studentsData as Student[];
 
@@ -200,6 +204,16 @@ export function StudentManagement() {
     await supabase.storage.from('profile-photos').remove([filePath]);
   };
 
+  const saveEdit = async () => {
+    if (!editingField) return;
+    const field = editingField.field;
+    let value: any = editValue;
+    if (field === "fee_amount") value = parseInt(editValue);
+    await updateItem(editingField.studentId, { [field]: value });
+    setEditingField(null);
+    refetchStudents();
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -210,11 +224,19 @@ export function StudentManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Student Management</h2>
-          <p className="text-gray-600">Manage student information and enrollment</p>
-        </div>
+      {/* Enhanced Header */}
+
+
+      {/* Enhanced Section Header */}
+      <section className="bg-blue-50 rounded-xl px-6 py-4 mb-6 shadow-sm border border-blue-100">
+        <h2 className="text-2xl font-bold text-blue-900 flex items-center gap-2">
+          <span role="img" aria-label="students">🧑‍🎓</span>
+          Student Management
+        </h2>
+        <p className="text-gray-600 text-sm mt-1">Manage student information and enrollment</p>
+      </section>
+
+      <div className="flex justify-end items-center">
         <div className="flex gap-3">
           <Button onClick={handleExportToExcel} variant="outline" className="gap-2">
             <Download className="w-4 h-4" />
@@ -560,91 +582,201 @@ export function StudentManagement() {
 
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              Students ({filteredStudents.length})
+          {/* Enhanced Students Header and Search Bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-gradient-to-r from-white via-blue-50 to-blue-100/60 rounded-2xl shadow p-4 border border-blue-100 mb-2">
+            <CardTitle className="flex items-center gap-3 text-2xl font-extrabold text-blue-900 tracking-tight">
+              <Users className="w-7 h-7 text-blue-600" />
+              Students <span className="text-lg font-bold text-blue-500">({filteredStudents.length})</span>
             </CardTitle>
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <div className="relative w-full sm:w-auto max-w-xs">
+              <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-blue-400" />
               <Input
                 placeholder="Search students..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-64"
+                className="pl-10 w-full rounded-xl bg-white/70 border border-blue-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 shadow-sm transition-all placeholder:text-blue-400 text-blue-900"
               />
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white border rounded-lg">
-              <thead>
-                <tr>
-                  <th className="px-4 py-2">Photo</th>
-                  <th className="px-4 py-2">Name</th>
-                  <th className="px-4 py-2">Class</th>
-                  <th className="px-4 py-2">Board</th>
-                  <th className="px-4 py-2">Batch Time</th>
-                  <th className="px-4 py-2">Username</th>
-                  <th className="px-4 py-2">Fee Amount</th>
-                  <th className="px-4 py-2">Term Type</th>
-                  <th className="px-4 py-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredStudents.map(student => (
-                  <tr key={student.id} className="border-t">
-                    <td className="px-4 py-2 text-center">
-                      <Avatar className="h-10 w-10 mx-auto">
-                        {student.profile_photo_url ? (
-                          <AvatarImage src={student.profile_photo_url} alt={student.name} />
-                        ) : (
-                          <AvatarFallback>
-                            <span className="text-xl">👤</span>
-                          </AvatarFallback>
-                        )}
-                      </Avatar>
-                    </td>
-                    <td className="px-4 py-2">{student.name}</td>
-                    <td className="px-4 py-2">{student.class}</td>
-                    <td className="px-4 py-2">{student.board}</td>
-                    <td className="px-4 py-2">{student.batch_time}</td>
-                    <td className="px-4 py-2">{student.username}</td>
-                    <td className="px-4 py-2">₹{student.fee_amount}</td>
-                    <td className="px-4 py-2">{student.term_type}</td>
-                    <td className="px-4 py-2">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openEditDialog(student)}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => handleDeleteStudent(student.id, student.name)}
-                            className="text-red-600"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {filteredStudents.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                No students found. Add some students to get started.
-              </div>
-            )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-8">
+            {filteredStudents.map(student => (
+              <Card
+                key={student.id}
+                draggable
+                onDragStart={() => setDraggingStudentId(student.id)}
+                onDragEnd={() => setDraggingStudentId(null)}
+                className="relative p-6 flex flex-col items-center bg-gradient-to-br from-white via-blue-50 to-blue-100 shadow-lg rounded-2xl border border-gray-200 hover:border-blue-500 hover:shadow-2xl transition-all duration-200 transform hover:-translate-y-1 animate-fade-in"
+              >
+                {/* Avatar and Board Badge */}
+                <div className="relative mb-3">
+                  <Avatar className="h-20 w-20 shadow-md border-2 border-blue-200">
+                    {student.profile_photo_url ? (
+                      <AvatarImage src={student.profile_photo_url} alt={student.name} />
+                    ) : (
+                      <AvatarFallback className="text-2xl">{student.name?.[0]?.toUpperCase() || '?'}</AvatarFallback>
+                    )}
+                  </Avatar>
+                  {/* Board badge */}
+                  <span className={`absolute -top-2 -right-2 px-2 py-0.5 rounded-full text-xs font-semibold shadow ${student.board === 'CBSE' ? 'bg-blue-500 text-white' : 'bg-green-500 text-white'}`}>{student.board}</span>
+                </div>
+                <div className="mt-1 font-bold text-xl text-blue-900">{student.name}</div>
+                <div className="flex flex-col gap-2 mt-2 w-full">
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {/* Class Widget */}
+                    <div
+                      className="bg-blue-50 rounded-lg px-3 py-1 flex items-center gap-2 shadow-sm cursor-pointer"
+                      onDoubleClick={() => { setEditingField({studentId: student.id, field: 'class'}); setEditValue(student.class); }}
+                    >
+                      <span role="img" aria-label="class" className="text-blue-400">🏫</span>
+                      {editingField?.studentId === student.id && editingField.field === 'class' ? (
+                        <input
+                          value={editValue}
+                          autoFocus
+                          onChange={e => setEditValue(e.target.value)}
+                          onBlur={saveEdit}
+                          onKeyDown={e => { if (e.key === 'Enter') saveEdit(); }}
+                          className="bg-transparent border-b border-blue-400 outline-none w-12 text-center animate-pulse"
+                        />
+                      ) : (
+                        <span>Class <span className="font-semibold">{student.class}</span></span>
+                      )}
+                    </div>
+                    {/* Board Widget */}
+                    <div
+                      className="bg-green-50 rounded-lg px-3 py-1 flex items-center gap-2 shadow-sm cursor-pointer"
+                      onDoubleClick={() => { setEditingField({studentId: student.id, field: 'board'}); setEditValue(student.board); }}
+                    >
+                      <span role="img" aria-label="board" className="text-green-400">🏷️</span>
+                      {editingField?.studentId === student.id && editingField.field === 'board' ? (
+                        <input
+                          value={editValue}
+                          autoFocus
+                          onChange={e => setEditValue(e.target.value)}
+                          onBlur={saveEdit}
+                          onKeyDown={e => { if (e.key === 'Enter') saveEdit(); }}
+                          className="bg-transparent border-b border-green-400 outline-none w-20 text-center animate-pulse"
+                        />
+                      ) : (
+                        <span>Board <span className="font-semibold">{student.board}</span></span>
+                      )}
+                    </div>
+                    {/* Batch Widget */}
+                    <div
+                      className="bg-purple-50 rounded-lg px-3 py-1 flex items-center gap-2 shadow-sm cursor-pointer"
+                      onDoubleClick={() => { setEditingField({studentId: student.id, field: 'batch_time'}); setEditValue(student.batch_time); }}
+                    >
+                      <span role="img" aria-label="batch" className="text-purple-400">⏰</span>
+                      {editingField?.studentId === student.id && editingField.field === 'batch_time' ? (
+                        <input
+                          value={editValue}
+                          autoFocus
+                          onChange={e => setEditValue(e.target.value)}
+                          onBlur={saveEdit}
+                          onKeyDown={e => { if (e.key === 'Enter') saveEdit(); }}
+                          className="bg-transparent border-b border-purple-400 outline-none w-24 text-center animate-pulse"
+                        />
+                      ) : (
+                        <span>Batch <span className="font-semibold">{student.batch_time}</span></span>
+                      )}
+                    </div>
+                    {/* Username Widget */}
+                    <div
+                      className="bg-gray-50 rounded-lg px-3 py-1 flex items-center gap-2 shadow-sm cursor-pointer"
+                      onDoubleClick={() => { setEditingField({studentId: student.id, field: 'username'}); setEditValue(student.username); }}
+                    >
+                      <span role="img" aria-label="username" className="text-gray-400">👤</span>
+                      {editingField?.studentId === student.id && editingField.field === 'username' ? (
+                        <input
+                          value={editValue}
+                          autoFocus
+                          onChange={e => setEditValue(e.target.value)}
+                          onBlur={saveEdit}
+                          onKeyDown={e => { if (e.key === 'Enter') saveEdit(); }}
+                          className="bg-transparent border-b border-gray-400 outline-none w-24 text-center animate-pulse"
+                        />
+                      ) : (
+                        <span>Username <span className="font-semibold">{student.username}</span></span>
+                      )}
+                    </div>
+                    {/* Fee per Term Widget */}
+                    <div
+                      className="bg-yellow-50 rounded-lg px-3 py-1 flex items-center gap-2 shadow-sm cursor-pointer"
+                      onDoubleClick={() => { setEditingField({studentId: student.id, field: 'fee_amount'}); setEditValue(student.fee_amount.toString()); }}
+                    >
+                      <span role="img" aria-label="fee" className="text-yellow-400">💰</span>
+                      {editingField?.studentId === student.id && editingField.field === 'fee_amount' ? (
+                        <input
+                          type="number"
+                          value={editValue}
+                          autoFocus
+                          onChange={e => setEditValue(e.target.value)}
+                          onBlur={saveEdit}
+                          onKeyDown={e => { if (e.key === 'Enter') saveEdit(); }}
+                          className="bg-transparent border-b border-yellow-400 outline-none w-20 text-center animate-pulse"
+                        />
+                      ) : (
+                        <span>Fee per Term <span className="font-semibold text-green-700">₹{student.fee_amount}</span></span>
+                      )}
+                    </div>
+                    {/* Term Type Widget */}
+                    <div
+                      className="bg-orange-50 rounded-lg px-3 py-1 flex items-center gap-2 shadow-sm cursor-pointer"
+                      onDoubleClick={() => { setEditingField({studentId: student.id, field: 'term_type'}); setEditValue(student.term_type); }}
+                    >
+                      <span role="img" aria-label="term" className="text-orange-400">📅</span>
+                      {editingField?.studentId === student.id && editingField.field === 'term_type' ? (
+                        <input
+                          value={editValue}
+                          autoFocus
+                          onChange={e => setEditValue(e.target.value)}
+                          onBlur={saveEdit}
+                          onKeyDown={e => { if (e.key === 'Enter') saveEdit(); }}
+                          className="bg-transparent border-b border-orange-400 outline-none w-20 text-center animate-pulse"
+                        />
+                      ) : (
+                        <span>Term <span className="font-semibold">{student.term_type}</span></span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="w-full border-t border-gray-200 my-3"></div>
+                <div className="mt-2 flex gap-3 w-full justify-center">
+                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded shadow" onClick={() => openEditDialog(student)}>
+                    Edit
+                  </Button>
+                  <Button size="sm" variant="destructive" className="px-4 py-1 rounded shadow" onClick={() => handleDeleteStudent(student.id, student.name)} title="Delete this student">
+                    Delete
+                  </Button>
+                </div>
+              </Card>
+            ))}
           </div>
+          {/* Dustbin for drag-to-delete */}
+          {draggingStudentId && (
+            <div
+              className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center transition-all ${dragOverDustbin ? "scale-110" : "scale-100"}`}
+              onDragOver={e => { e.preventDefault(); setDragOverDustbin(true); }}
+              onDragLeave={() => setDragOverDustbin(false)}
+              onDrop={async e => {
+                setDragOverDustbin(false);
+                setDraggingStudentId(null);
+                await handleDeleteStudent(draggingStudentId, students.find(s => s.id === draggingStudentId)?.name || "");
+              }}
+              style={{ pointerEvents: "all" }}
+            >
+              <div className={`bg-white shadow-lg rounded-full p-4 border-2 ${dragOverDustbin ? "border-red-600" : "border-gray-300"}`}>
+                <span role="img" aria-label="delete" className={`text-4xl ${dragOverDustbin ? "text-red-600" : "text-gray-500"}`}>🗑️</span>
+              </div>
+              <span className="mt-2 text-sm font-semibold text-gray-700">Drop here to delete</span>
+            </div>
+          )}
+          {filteredStudents.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              No students found. Add some students to get started.
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
