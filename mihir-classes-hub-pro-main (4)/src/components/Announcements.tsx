@@ -27,6 +27,8 @@ export function Announcements({ readOnly = false }: AnnouncementsProps) {
     priority: "",
     is_general: true,
   });
+  const [draggingAnnouncementId, setDraggingAnnouncementId] = useState<string | null>(null);
+  const [dragOverDustbin, setDragOverDustbin] = useState(false);
 
   // Use Supabase for announcements
   const {
@@ -35,6 +37,7 @@ export function Announcements({ readOnly = false }: AnnouncementsProps) {
     updateItem,
     deleteItem,
     loading,
+    refetch,
   } = useSupabaseData("announcements", { column: "created_date", ascending: false });
 
   // State for editing and deleting
@@ -70,6 +73,7 @@ export function Announcements({ readOnly = false }: AnnouncementsProps) {
       is_general: true,
     });
     setIsAddDialogOpen(false);
+    refetch();
   };
 
   const handleUpdateAnnouncement = async () => {
@@ -95,6 +99,7 @@ export function Announcements({ readOnly = false }: AnnouncementsProps) {
     await deleteItem(deleteAnnouncementId);
     setDeleteDialogOpen(false);
     setDeleteAnnouncementId(null);
+    refetch();
   };
 
   const filteredAnnouncements = filterPriority && filterPriority !== "all"
@@ -253,7 +258,12 @@ export function Announcements({ readOnly = false }: AnnouncementsProps) {
       {/* Announcements Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
         {filteredAnnouncements.map(announcement => (
-          <Card key={announcement.id} className="bg-white/90 rounded-2xl shadow-lg border border-blue-100 hover:shadow-2xl transition-all duration-200 transform hover:-translate-y-1 animate-fade-in">
+          <Card key={announcement.id} 
+            className="bg-white/90 rounded-2xl shadow-lg border border-blue-100 hover:shadow-2xl transition-all duration-200 transform hover:-translate-y-1 animate-fade-in"
+            draggable={!readOnly}
+            onDragStart={() => !readOnly && setDraggingAnnouncementId(announcement.id)}
+            onDragEnd={() => !readOnly && setDraggingAnnouncementId(null)}
+          >
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
@@ -276,7 +286,7 @@ export function Announcements({ readOnly = false }: AnnouncementsProps) {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => deleteItem(announcement.id)} className="text-red-600">Delete</DropdownMenuItem>
+                        <DropdownMenuItem onClick={async () => { await deleteItem(announcement.id); refetch(); }} className="text-red-600">Delete</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   )}
@@ -290,6 +300,26 @@ export function Announcements({ readOnly = false }: AnnouncementsProps) {
           </Card>
         ))}
       </div>
+      {/* Dustbin for drag-to-delete */}
+      {draggingAnnouncementId && (
+        <div
+          className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center transition-all ${dragOverDustbin ? "scale-110" : "scale-100"}`}
+          onDragOver={e => { e.preventDefault(); setDragOverDustbin(true); }}
+          onDragLeave={() => setDragOverDustbin(false)}
+          onDrop={async e => {
+            setDragOverDustbin(false);
+            setDraggingAnnouncementId(null);
+            await deleteItem(draggingAnnouncementId);
+            refetch();
+          }}
+          style={{ pointerEvents: "all" }}
+        >
+          <div className={`bg-white shadow-lg rounded-full p-4 border-2 ${dragOverDustbin ? "border-red-600" : "border-gray-300"}`}>
+            <span role="img" aria-label="delete" className={`text-4xl ${dragOverDustbin ? "text-red-600" : "text-gray-500"}`}>🗑️</span>
+          </div>
+          <span className="mt-2 text-sm font-semibold text-gray-700">Drop here to delete</span>
+        </div>
+      )}
       {filteredAnnouncements.length === 0 && (
         <Card>
           <CardContent className="p-12 text-center">

@@ -23,8 +23,8 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
       <div className="flex items-center gap-4 mb-8">
         <div className="bg-blue-600 rounded-2xl p-3 shadow-lg">
           <span className="text-white text-3xl">🎓</span>
-        </div>
-        <div>
+          </div>
+          <div>
           <div className="font-extrabold text-xl text-blue-900">Mihir Classes</div>
           <div className="text-xs text-gray-500 font-medium">{isAdmin ? "Admin Panel" : "Management System"}</div>
         </div>
@@ -35,19 +35,19 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
         {menuItems.map(item => (
           <button
             key={item.id}
-            onClick={() => setActiveSection(item.id)}
+                    onClick={() => setActiveSection(item.id)}
             className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-base font-medium
               ${activeSection === item.id ? 'bg-blue-100 text-blue-700 font-bold shadow border-l-4 border-blue-500' : 'hover:bg-gray-100 text-gray-700'}
               ${item.adminOnly && !isAdmin ? 'opacity-50 cursor-not-allowed' : ''}`}
-            disabled={item.adminOnly && !isAdmin}
-          >
+                    disabled={item.adminOnly && !isAdmin}
+                  >
             <span className="text-xl">{item.icon}</span>
             <span>{item.title}</span>
-            {item.adminOnly && (
+                      {item.adminOnly && (
               <span className="ml-auto text-gray-400 text-xs">🔒</span>
             )}
           </button>
-        ))}
+              ))}
       </nav>
     </aside>
   );

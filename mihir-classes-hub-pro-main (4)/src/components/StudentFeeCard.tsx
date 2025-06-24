@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { User, Plus, MoreVertical } from "lucide-react";
+import { User, Plus, MoreVertical, Pencil } from "lucide-react";
 import { useFeeCalculations } from "@/hooks/useFeeCalculations";
 import { PaymentDialog } from "./PaymentDialog";
 import { FeeCardActions } from "./FeeCardActions";
@@ -9,6 +9,8 @@ import { StudentPaymentDetails } from "./StudentPaymentDetails";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/components/ui/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Student {
   id: string;
@@ -27,6 +29,7 @@ interface FeeRecord {
   amount: number;
   status: string;
   term_number?: number;
+  paid_date?: string;
 }
 
 interface StudentFeeCardProps {
@@ -39,9 +42,109 @@ interface StudentFeeCardProps {
   onDragEnd?: () => void;
 }
 
+function EditFeeTermsDialog({ open, onOpenChange, terms, onSave }) {
+  const [editedTerms, setEditedTerms] = useState(() => terms.map(term => ({ ...term, paid_date: term.paid_date || '' })));
+  const [saving, setSaving] = useState(false);
+  const [openPaymentsTerm, setOpenPaymentsTerm] = useState(null);
+
+  // Refresh editedTerms when dialog opens or terms change
+  useEffect(() => {
+    if (open) {
+      setEditedTerms(terms.map(term => ({ ...term, paid_date: term.paid_date || '' })));
+    }
+  }, [open, terms]);
+
+  const handlePaidChange = (idx, value) => {
+    setEditedTerms(editedTerms => editedTerms.map((term, i) => {
+      if (i !== idx) return term;
+      const paid = Number(value);
+      const remaining = Math.max(0, term.amount - paid);
+      let status = 'pending';
+      if (remaining <= 0) status = 'paid';
+      else if (paid > 0) status = 'partially_paid';
+      return { ...term, total_paid: paid, remaining_amount: remaining, status };
+    }));
+  };
+
+  const handleDateChange = (idx, value) => {
+    setEditedTerms(editedTerms => editedTerms.map((term, i) => i === idx ? { ...term, paid_date: value } : term));
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    await onSave(editedTerms);
+    setSaving(false);
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Edit Term-wise Fee</DialogTitle>
+        </DialogHeader>
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm border-separate border-spacing-y-2">
+            <thead>
+              <tr className="bg-gray-100 text-gray-700">
+                <th className="px-3 py-2 text-left rounded-tl-lg">Term</th>
+                <th className="px-3 py-2 text-left">Fee</th>
+                <th className="px-3 py-2 text-left">Paid</th>
+                <th className="px-3 py-2 text-left">Remaining</th>
+                <th className="px-3 py-2 text-left">Status</th>
+                <th className="px-3 py-2 text-left rounded-tr-lg">Paid Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {editedTerms.map((term, idx) => (
+                <tr key={term.id} className="bg-white shadow rounded-lg">
+                  <td className="px-3 py-2 font-semibold">{term.term_number}</td>
+                  <td className="px-3 py-2">₹{term.amount}</td>
+                  <td className="px-3 py-2">
+                    <input
+                      type="number"
+                      className="border rounded px-2 py-1 w-24 focus:outline-blue-500"
+                      value={term.total_paid}
+                      min={0}
+                      max={term.amount}
+                      onChange={e => handlePaidChange(idx, e.target.value)}
+                      disabled={saving}
+                    />
+                  </td>
+                  <td className="px-3 py-2">₹{term.remaining_amount}</td>
+                  <td className="px-3 py-2">
+                    <span className={`font-medium ${term.status === 'paid' ? 'text-green-600' : term.status === 'partially_paid' ? 'text-orange-600' : 'text-gray-600'}`}>
+                      {term.status === 'paid' ? 'Paid' : term.status === 'partially_paid' ? 'Partially Paid' : 'Pending'}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2">
+                    <input
+                      type="date"
+                      className="border rounded px-2 py-1 w-36 focus:outline-blue-500"
+                      value={term.paid_date || ''}
+                      onChange={e => handleDateChange(idx, e.target.value)}
+                      disabled={saving}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex justify-end mt-6">
+          <Button onClick={handleSave} disabled={saving} className="bg-blue-600 text-white w-full py-2 text-base font-semibold rounded-lg shadow">
+            {saving ? 'Saving...' : 'Save'}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function StudentFeeCard({ student, feeRecords, onPaymentAdded, onCardDeleted, draggable = false, onDragStart, onDragEnd }: StudentFeeCardProps) {
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const feeRecord = feeRecords[0];
   const { yearlyFee, totalPaid, remainingAmount } = useFeeCalculations(student, feeRecord);
   const { toast } = useToast();
@@ -93,6 +196,80 @@ export function StudentFeeCard({ student, feeRecords, onPaymentAdded, onCardDele
     setIsDetailsDialogOpen(true);
   };
 
+  const handleSaveTerms = async (editedTerms) => {
+    let hasError = false;
+    for (const term of editedTerms) {
+      // Update fee_records
+      const { error } = await supabase
+        .from('fee_records')
+        .update({
+          total_paid: term.total_paid,
+          remaining_amount: term.remaining_amount,
+          status: term.status,
+          paid_date: term.paid_date || null,
+        })
+        .eq('id', term.id);
+      if (error) {
+        hasError = true;
+        toast({ title: 'Error', description: `Failed to update term ${term.term_number}: ${error.message}`, variant: 'destructive' });
+      }
+      // Sync fee_payments for this term
+      if (term.total_paid > 0) {
+        // Check if a payment exists for this fee_record_id
+        const { data: existingPayments, error: fetchError } = await supabase
+          .from('fee_payments')
+          .select('*')
+          .eq('fee_record_id', term.id);
+        if (fetchError) {
+          hasError = true;
+          toast({ title: 'Error', description: `Failed to fetch payment for term ${term.term_number}: ${fetchError.message}`, variant: 'destructive' });
+        } else if (existingPayments && existingPayments.length > 0) {
+          // Update the first payment record
+          const paymentId = existingPayments[0].id;
+          const { error: updatePayError } = await supabase
+            .from('fee_payments')
+            .update({
+              amount_paid: term.total_paid,
+              payment_date: term.paid_date || null,
+              student_id: term.student_id,
+              student_name: term.student_name,
+              fee_record_id: term.id,
+            })
+            .eq('id', paymentId);
+          if (updatePayError) {
+            hasError = true;
+            toast({ title: 'Error', description: `Failed to update payment for term ${term.term_number}: ${updatePayError.message}`, variant: 'destructive' });
+          }
+        } else {
+          // Insert a new payment record
+          const { error: insertPayError } = await supabase
+            .from('fee_payments')
+            .insert({
+              amount_paid: term.total_paid,
+              payment_date: term.paid_date || null,
+              student_id: term.student_id,
+              student_name: term.student_name,
+              fee_record_id: term.id,
+            });
+          if (insertPayError) {
+            hasError = true;
+            toast({ title: 'Error', description: `Failed to insert payment for term ${term.term_number}: ${insertPayError.message}`, variant: 'destructive' });
+          }
+        }
+      } else {
+        // If total_paid is 0, optionally delete any payment record for this term
+        await supabase
+          .from('fee_payments')
+          .delete()
+          .eq('fee_record_id', term.id);
+      }
+    }
+    if (!hasError) {
+      toast({ title: 'Success', description: 'Term-wise fee updated successfully!' });
+    }
+    onPaymentAdded();
+  };
+
   return (
     <Card
       className="w-full relative bg-white/90 rounded-2xl shadow-lg border border-blue-100 hover:shadow-2xl transition-all duration-200 transform hover:-translate-y-1 animate-fade-in"
@@ -116,7 +293,7 @@ export function StudentFeeCard({ student, feeRecords, onPaymentAdded, onCardDele
               student={student}
               feeRecord={feeRecord}
               onCardDeleted={onCardDeleted}
-              onViewDetails={handleViewDetails}
+              onEdit={() => setIsEditDialogOpen(true)}
             />
           </div>
         </div>
@@ -202,6 +379,13 @@ export function StudentFeeCard({ student, feeRecords, onPaymentAdded, onCardDele
           remainingAmount={remainingAmount}
           yearlyFee={yearlyFee}
           onPaymentAdded={onPaymentAdded}
+        />
+
+        <EditFeeTermsDialog
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          terms={feeRecords}
+          onSave={handleSaveTerms}
         />
 
         <StudentPaymentDetails

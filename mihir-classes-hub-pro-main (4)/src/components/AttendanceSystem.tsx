@@ -39,7 +39,7 @@ const BATCH_TIMES = [
 
 export function AttendanceSystem() {
   const { data: studentsData } = useSupabaseData("students");
-  const { data: attendanceData, addItem: addAttendance, updateItem: updateAttendance } = useSupabaseData("attendance");
+  const { data: attendanceData, addItem: addAttendance, updateItem: updateAttendance, refetch: refetchAttendance } = useSupabaseData("attendance");
   const [selectedBatch, setSelectedBatch] = useState("all");
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const { toast } = useToast();
@@ -83,6 +83,7 @@ export function AttendanceSystem() {
       title: "Success",
       description: `Attendance marked as ${status} for ${student.name}`,
     });
+    if (refetchAttendance) refetchAttendance();
   };
 
   const getStudentAttendanceStatus = (studentId: string) => {

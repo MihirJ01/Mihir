@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,11 +29,13 @@ function renderNoteContent(content: string) {
 }
 
 export function NotesSection() {
-  const { data: notes, addItem, deleteItem } = useSupabaseData("notes", { column: "created_at", ascending: false });
+  const { data: notes, addItem, deleteItem, refetch } = useSupabaseData("notes", { column: "created_at", ascending: false });
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState("all");
   const [selectedBoard, setSelectedBoard] = useState("all");
   const { toast } = useToast();
+  const [draggingNoteId, setDraggingNoteId] = useState<string | null>(null);
+  const [dragOverDustbin, setDragOverDustbin] = useState(false);
 
   const [newNote, setNewNote] = useState({
     title: "",
@@ -75,6 +77,7 @@ export function NotesSection() {
         subject: "",
       });
       setIsAddDialogOpen(false);
+      refetch();
     }
   };
 
@@ -253,7 +256,12 @@ export function NotesSection() {
       {/* Notes Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         {filteredNotes.map(note => (
-          <Card key={note.id} className="bg-white/90 rounded-2xl shadow-lg border border-blue-100 hover:shadow-2xl transition-all duration-200 transform hover:-translate-y-1 animate-fade-in">
+          <Card key={note.id} 
+            className="bg-white/90 rounded-2xl shadow-lg border border-blue-100 hover:shadow-2xl transition-all duration-200 transform hover:-translate-y-1 animate-fade-in"
+            draggable
+            onDragStart={() => setDraggingNoteId(note.id)}
+            onDragEnd={() => setDraggingNoteId(null)}
+          >
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
@@ -275,7 +283,7 @@ export function NotesSection() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => deleteItem(note.id)} className="text-red-600">Delete</DropdownMenuItem>
+                      <DropdownMenuItem onClick={async () => { await deleteItem(note.id); refetch(); }} className="text-red-600">Delete</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -290,6 +298,27 @@ export function NotesSection() {
           </Card>
         ))}
       </div>
+
+      {/* Dustbin for drag-to-delete */}
+      {draggingNoteId && (
+        <div
+          className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center transition-all ${dragOverDustbin ? "scale-110" : "scale-100"}`}
+          onDragOver={e => { e.preventDefault(); setDragOverDustbin(true); }}
+          onDragLeave={() => setDragOverDustbin(false)}
+          onDrop={async e => {
+            setDragOverDustbin(false);
+            setDraggingNoteId(null);
+            await deleteItem(draggingNoteId);
+            refetch();
+          }}
+          style={{ pointerEvents: "all" }}
+        >
+          <div className={`bg-white shadow-lg rounded-full p-4 border-2 ${dragOverDustbin ? "border-red-600" : "border-gray-300"}`}>
+            <span role="img" aria-label="delete" className={`text-4xl ${dragOverDustbin ? "text-red-600" : "text-gray-500"}`}>🗑️</span>
+          </div>
+          <span className="mt-2 text-sm font-semibold text-gray-700">Drop here to delete</span>
+        </div>
+      )}
 
       {filteredNotes.length === 0 && (
         <Card>

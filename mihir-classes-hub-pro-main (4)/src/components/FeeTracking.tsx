@@ -55,7 +55,10 @@ export function FeeTracking() {
   const fees = feeRecordsData as FeeRecord[];
 
   // Get unique batch times from students
-  const batchOptions = Array.from(new Set(students.map(s => s.batch_time).filter(Boolean)));
+  let batchOptions = Array.from(new Set(students.map(s => s.batch_time).filter(Boolean)));
+  // Custom order: 7:30-9:30, 9:30-11:30, 3:00-5:00
+  const batchOrder = ["7:30-9:30", "9:30-11:30", "3:00-5:00"];
+  batchOptions = batchOrder.filter(opt => batchOptions.includes(opt));
 
   // Recalculate statistics when data changes
   const { totalPending, totalPaid, overdueCount } = (() => {
@@ -91,29 +94,29 @@ export function FeeTracking() {
     let termDuration = 3; // default for 4 terms (3 months per term)
     if (student.board === "CBSE") {
       termDuration = student.term_type === "2 months" ? 2 :
-                     student.term_type === "3 months" ? 3 : 4;
+                        student.term_type === "3 months" ? 3 : 4;
       numberOfTerms = 12 / termDuration;
     }
     const perTermFee = student.fee_amount;
     for (let i = 1; i <= numberOfTerms; i++) {
-      const dueDate = new Date();
+    const dueDate = new Date();
       dueDate.setMonth(dueDate.getMonth() + termDuration * (i - 1));
-      const feeRecord = {
-        student_id: student.id,
-        student_name: student.name,
-        class: student.class,
+    const feeRecord = {
+      student_id: student.id,
+      student_name: student.name,
+      class: student.class,
         amount: perTermFee,
-        term_type: student.term_type,
+      term_type: student.term_type,
         term_number: i,
-        due_date: dueDate.toISOString().split('T')[0],
-        status: "pending" as const,
+      due_date: dueDate.toISOString().split('T')[0],
+      status: "pending" as const,
         remaining_amount: perTermFee,
-        total_paid: 0,
-      };
+      total_paid: 0,
+    };
       await addFeeRecord(feeRecord);
     }
-    setSelectedStudent("");
-    setIsAddDialogOpen(false);
+      setSelectedStudent("");
+      setIsAddDialogOpen(false);
   };
 
   const handlePaymentAdded = () => {
@@ -235,18 +238,18 @@ export function FeeTracking() {
             </DialogContent>
           </Dialog>
           {/* Batch Filter Dropdown - moved here */}
-          <Select value={selectedBatch} onValueChange={setSelectedBatch}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Filter by Batch" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Batches</SelectItem>
-              {batchOptions.map(batch => (
-                <SelectItem key={batch} value={batch}>{batch}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <Select value={selectedBatch} onValueChange={setSelectedBatch}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Filter by Batch" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Batches</SelectItem>
+            {batchOptions.map(batch => (
+              <SelectItem key={batch} value={batch}>{batch}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
       </section>
       {/* Enhanced Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
@@ -254,7 +257,7 @@ export function FeeTracking() {
           <CardContent className="p-4 sm:p-6 flex items-center gap-4">
             <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-green-100 shadow-inner">
               <DollarSign className="w-10 h-10 text-green-500" />
-            </div>
+              </div>
             <div>
               <p className="text-base font-semibold text-green-700">Total Collected</p>
               <p className="text-3xl font-extrabold text-green-600">₹{totalPaid.toLocaleString()}</p>
@@ -265,7 +268,7 @@ export function FeeTracking() {
           <CardContent className="p-4 sm:p-6 flex items-center gap-4">
             <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-orange-100 shadow-inner">
               <CreditCard className="w-10 h-10 text-orange-500" />
-            </div>
+              </div>
             <div>
               <p className="text-base font-semibold text-orange-700">Pending Amount</p>
               <p className="text-3xl font-extrabold text-orange-600">₹{totalPending.toLocaleString()}</p>
@@ -276,7 +279,7 @@ export function FeeTracking() {
           <CardContent className="p-4 sm:p-6 flex items-center gap-4">
             <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-red-100 shadow-inner">
               <AlertCircle className="w-10 h-10 text-red-500" />
-            </div>
+              </div>
             <div>
               <p className="text-base font-semibold text-red-700">Overdue Payments</p>
               <p className="text-3xl font-extrabold text-red-600">{overdueCount}</p>

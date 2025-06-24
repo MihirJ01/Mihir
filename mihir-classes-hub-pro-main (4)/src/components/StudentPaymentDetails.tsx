@@ -181,7 +181,7 @@ export function StudentPaymentDetails({ isOpen, onOpenChange, student }: Student
             <>
               <div ref={previewRef}>
                 <FeeCardExcelPreview student={student} payments={payments} logoUrl="/lovable-uploads/image.png" />
-              </div>
+                  </div>
             </>
           )}
         </div>

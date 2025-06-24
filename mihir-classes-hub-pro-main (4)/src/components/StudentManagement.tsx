@@ -67,7 +67,7 @@ export function StudentManagement() {
   // Remove auto-set term type based on board selection
   const handleBoardChange = (board: string) => {
     setNewStudent({
-      ...newStudent,
+      ...newStudent, 
       board
     });
   };
@@ -118,6 +118,11 @@ export function StudentManagement() {
         password: "",
       });
       setIsAddDialogOpen(false);
+      refetchStudents();
+      toast({
+        title: "Success",
+        description: `${newStudent.name} has been added successfully.`,
+      });
     }
   };
 
@@ -140,6 +145,7 @@ export function StudentManagement() {
       setEditingStudent(null);
       setEditProfilePhoto(null);
       setEditProfilePhotoUrl("");
+      refetchStudents();
     }
   };
 
@@ -151,6 +157,7 @@ export function StudentManagement() {
           title: "Success",
           description: `${studentName} has been deleted successfully.`,
         });
+        refetchStudents();
       }
     }
   };
@@ -601,7 +608,7 @@ export function StudentManagement() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 mt-8">
-            {filteredStudents.map(student => (
+                {filteredStudents.map(student => (
               <Card
                 key={student.id}
                 draggable
@@ -612,12 +619,12 @@ export function StudentManagement() {
                 {/* Avatar and Board Badge */}
                 <div className="relative mb-3">
                   <Avatar className="h-20 w-20 shadow-md border-2 border-blue-200">
-                    {student.profile_photo_url ? (
-                      <AvatarImage src={student.profile_photo_url} alt={student.name} />
-                    ) : (
+                        {student.profile_photo_url ? (
+                          <AvatarImage src={student.profile_photo_url} alt={student.name} />
+                        ) : (
                       <AvatarFallback className="text-2xl">{student.name?.[0]?.toUpperCase() || '?'}</AvatarFallback>
-                    )}
-                  </Avatar>
+                        )}
+                      </Avatar>
                   {/* Board badge */}
                   <span className={`absolute -top-2 -right-2 px-2 py-0.5 rounded-full text-xs font-semibold shadow ${student.board === 'CBSE' ? 'bg-blue-500 text-white' : 'bg-green-500 text-white'}`}>{student.board}</span>
                 </div>
@@ -745,9 +752,9 @@ export function StudentManagement() {
                 <div className="mt-2 flex gap-3 w-full justify-center">
                   <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded shadow" onClick={() => openEditDialog(student)}>
                     Edit
-                  </Button>
+                          </Button>
                   <Button size="sm" variant="destructive" className="px-4 py-1 rounded shadow" onClick={() => handleDeleteStudent(student.id, student.name)} title="Delete this student">
-                    Delete
+                            Delete
                   </Button>
                 </div>
               </Card>
@@ -763,6 +770,7 @@ export function StudentManagement() {
                 setDragOverDustbin(false);
                 setDraggingStudentId(null);
                 await handleDeleteStudent(draggingStudentId, students.find(s => s.id === draggingStudentId)?.name || "");
+                refetchStudents();
               }}
               style={{ pointerEvents: "all" }}
             >
@@ -772,11 +780,11 @@ export function StudentManagement() {
               <span className="mt-2 text-sm font-semibold text-gray-700">Drop here to delete</span>
             </div>
           )}
-          {filteredStudents.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              No students found. Add some students to get started.
-            </div>
-          )}
+            {filteredStudents.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                No students found. Add some students to get started.
+              </div>
+            )}
         </CardContent>
       </Card>
     </div>

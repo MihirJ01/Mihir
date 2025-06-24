@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Trash2, Download, Eye } from "lucide-react";
+import { MoreVertical, Trash2, Download, Eye, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import ExcelJS from 'exceljs';
@@ -20,10 +20,10 @@ interface FeeCardActionsProps {
     id: string;
   };
   onCardDeleted: () => void;
-  onViewDetails: () => void;
+  onEdit: () => void;
 }
 
-export function FeeCardActions({ student, feeRecord, onCardDeleted, onViewDetails }: FeeCardActionsProps) {
+export function FeeCardActions({ student, feeRecord, onCardDeleted, onEdit }: FeeCardActionsProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { toast } = useToast();
@@ -223,9 +223,9 @@ export function FeeCardActions({ student, feeRecord, onCardDeleted, onViewDetail
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={onViewDetails} className="gap-2">
-            <Eye className="w-4 h-4" />
-            View Details
+          <DropdownMenuItem onClick={onEdit} className="gap-2">
+            <Pencil className="w-4 h-4" />
+            Edit
           </DropdownMenuItem>
           <DropdownMenuItem 
             onClick={() => setShowDeleteDialog(true)} 
