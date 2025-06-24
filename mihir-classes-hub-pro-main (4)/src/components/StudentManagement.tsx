@@ -223,7 +223,7 @@ export function StudentManagement() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 px-2 sm:px-6">
       {/* Enhanced Header */}
 
 
@@ -600,7 +600,7 @@ export function StudentManagement() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 mt-8">
             {filteredStudents.map(student => (
               <Card
                 key={student.id}
@@ -623,7 +623,7 @@ export function StudentManagement() {
                 </div>
                 <div className="mt-1 font-bold text-xl text-blue-900">{student.name}</div>
                 <div className="flex flex-col gap-2 mt-2 w-full">
-                  <div className="flex flex-wrap gap-2 justify-center">
+                  <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4">
                     {/* Class Widget */}
                     <div
                       className="bg-blue-50 rounded-lg px-3 py-1 flex items-center gap-2 shadow-sm cursor-pointer"

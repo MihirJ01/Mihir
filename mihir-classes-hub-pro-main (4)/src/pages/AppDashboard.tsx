@@ -99,6 +99,17 @@ const AppDashboard = () => {
           {/* Enhanced Header */}
           <header className="w-full bg-gradient-to-r from-blue-50 via-white to-white shadow-sm py-6 px-8 rounded-b-3xl mb-6">
             <div className="flex items-center gap-4">
+              {isMobile && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="mr-2 block sm:hidden"
+                  onClick={() => setSidebarOpen(true)}
+                  aria-label="Open menu"
+                >
+                  <Menu className="w-7 h-7 text-blue-700" />
+                </Button>
+              )}
               <span className="text-blue-600 text-3xl">🎓</span>
               <div>
                 <h1 className="text-3xl sm:text-4xl font-extrabold text-blue-900 tracking-tight">

@@ -181,9 +181,9 @@ export function FeeTracking() {
   };
 
   return (
-    <div className="space-y-6 p-4 sm:p-6">
+    <div className="space-y-4 sm:space-y-6 p-2 sm:p-6">
       {/* Enhanced Section Header */}
-      <section className="bg-blue-50 rounded-xl px-6 py-4 mb-6 shadow-sm border border-blue-100 flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
+      <section className="bg-blue-50 rounded-xl px-3 sm:px-6 py-3 sm:py-4 mb-4 sm:mb-6 shadow-sm border border-blue-100 flex flex-col lg:flex-row lg:justify-between lg:items-center gap-3 sm:gap-4">
         <div>
           <h2 className="text-2xl font-bold text-blue-900 flex items-center gap-2">
             <span role="img" aria-label="fee">💳</span>
@@ -249,7 +249,7 @@ export function FeeTracking() {
         </div>
       </section>
       {/* Enhanced Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
         <Card className="bg-gradient-to-br from-white via-green-50 to-green-100/60 rounded-2xl shadow-md border-0 transition-transform hover:scale-105 hover:shadow-xl">
           <CardContent className="p-4 sm:p-6 flex items-center gap-4">
             <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-green-100 shadow-inner">

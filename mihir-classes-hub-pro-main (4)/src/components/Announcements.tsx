@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Megaphone, Plus, Download, Calendar, Users, MoreVertical } from "lucide-react";
+import { Megaphone, Plus, Download, Calendar, Users, MoreVertical, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { exportToExcel } from "@/utils/excelExport";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
@@ -128,7 +128,7 @@ export function Announcements({ readOnly = false }: AnnouncementsProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 px-2 sm:px-6">
       {/* Enhanced Section Header */}
       <section className="bg-blue-50 rounded-xl px-6 py-4 mb-6 shadow-sm border border-blue-100 flex items-center justify-between">
         <div>
@@ -251,7 +251,7 @@ export function Announcements({ readOnly = false }: AnnouncementsProps) {
         </Select>
       </div>
       {/* Announcements Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
         {filteredAnnouncements.map(announcement => (
           <Card key={announcement.id} className="bg-white/90 rounded-2xl shadow-lg border border-blue-100 hover:shadow-2xl transition-all duration-200 transform hover:-translate-y-1 animate-fade-in">
             <CardHeader className="pb-3">
@@ -268,16 +268,18 @@ export function Announcements({ readOnly = false }: AnnouncementsProps) {
                   </div>
                 </div>
                 <div className="flex-shrink-0 flex items-center">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="text-gray-400 hover:text-blue-600">
-                        <MoreVertical className="w-5 h-5" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => deleteItem(announcement.id)} className="text-red-600">Delete</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  {!readOnly && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="ml-2">
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => deleteItem(announcement.id)} className="text-red-600">Delete</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </div>
               </div>
             </CardHeader>

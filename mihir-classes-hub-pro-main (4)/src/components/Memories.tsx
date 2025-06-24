@@ -164,7 +164,7 @@ export function Memories({ isUserView = false }: { isUserView?: boolean } = {}) 
   }, [reelModalOpen, reelVideos.length]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 px-2 sm:px-6">
       {/* Enhanced Section Header */}
       <section className="bg-blue-50 rounded-xl px-6 py-4 mb-6 shadow-sm border border-blue-100 flex items-center justify-between">
         <div>
@@ -294,7 +294,7 @@ export function Memories({ isUserView = false }: { isUserView?: boolean } = {}) 
       </div>
       {/* Album List */}
       {!selectedAlbum && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
           {albums.map((album: any) => (
             <Card
               key={album.id}

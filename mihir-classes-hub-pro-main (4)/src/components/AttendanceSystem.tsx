@@ -112,9 +112,9 @@ export function AttendanceSystem() {
   const absentCount = todaysAttendance.filter(record => record.status === "absent").length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 px-2 sm:px-6">
       {/* Enhanced Section Header */}
-      <section className="bg-blue-50 rounded-xl px-6 py-4 mb-6 shadow-sm border border-blue-100 flex items-center justify-between">
+      <section className="bg-blue-50 rounded-xl px-3 sm:px-6 py-3 sm:py-4 mb-4 sm:mb-6 shadow-sm border border-blue-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
         <div>
           <h2 className="text-2xl font-bold text-blue-900 flex items-center gap-2">
             <span role="img" aria-label="attendance">📅</span>
@@ -129,7 +129,7 @@ export function AttendanceSystem() {
       </section>
 
       {/* Enhanced Stat Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">
         <Card className="bg-gradient-to-br from-white via-green-50 to-green-100/60 rounded-2xl shadow-md border-0 transition-transform hover:scale-105 hover:shadow-xl">
           <CardContent className="p-6 flex items-center gap-4">
             <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-green-100 shadow-inner">
@@ -169,25 +169,25 @@ export function AttendanceSystem() {
 
       {/* Enhanced Mark Attendance Section */}
       <Card className="rounded-2xl shadow-lg border-0 bg-gradient-to-br from-white via-blue-50 to-blue-100/60">
-        <CardHeader className="border-b border-blue-100 pb-4">
-          <CardTitle className="flex items-center gap-3 text-2xl font-extrabold text-blue-900 tracking-tight">
-            <Calendar className="w-7 h-7 text-blue-600" />
+        <CardHeader className="border-b border-blue-100 pb-3 sm:pb-4">
+          <CardTitle className="flex items-center gap-2 sm:gap-3 text-lg sm:text-2xl font-extrabold text-blue-900 tracking-tight">
+            <Calendar className="w-5 h-5 sm:w-7 sm:h-7 text-blue-600" />
             Mark Attendance
           </CardTitle>
-          <div className="flex flex-col sm:flex-row gap-4 mt-4">
-            <div>
-              <label className="block text-sm font-semibold text-blue-900 mb-1">Date</label>
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mt-2 sm:mt-4 w-full">
+            <div className="w-full sm:w-auto">
+              <label className="block text-xs sm:text-sm font-semibold text-blue-900 mb-1">Date</label>
               <input
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="border border-blue-200 rounded-xl px-4 py-2 bg-white/80 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 shadow-sm transition-all text-blue-900 font-semibold"
+                className="border border-blue-200 rounded-xl px-3 sm:px-4 py-2 bg-white/80 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 shadow-sm transition-all text-blue-900 font-semibold w-full"
               />
             </div>
-            <div>
-              <label className="block text-sm font-semibold text-blue-900 mb-1">Filter by Batch</label>
+            <div className="w-full sm:w-auto">
+              <label className="block text-xs sm:text-sm font-semibold text-blue-900 mb-1">Filter by Batch</label>
               <Select value={selectedBatch} onValueChange={setSelectedBatch}>
-                <SelectTrigger className="w-48 rounded-xl border-blue-200 bg-white/80 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 shadow-sm text-blue-900 font-semibold">
+                <SelectTrigger className="w-full sm:w-48 rounded-xl border-blue-200 bg-white/80 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 shadow-sm text-blue-900 font-semibold">
                   <SelectValue placeholder="All Batches" />
                 </SelectTrigger>
                 <SelectContent>
