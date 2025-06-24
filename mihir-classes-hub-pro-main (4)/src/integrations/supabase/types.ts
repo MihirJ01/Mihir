@@ -352,6 +352,123 @@ export type Database = {
           },
         ]
       }
+      videos: {
+        Row: {
+          id: string;
+          title: string;
+          description: string;
+          video_url: string;
+          thumbnail_url: string;
+          duration_seconds: number;
+          uploaded_by: string;
+          created_at: string;
+          likes_count: number;
+          year: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          description: string;
+          video_url: string;
+          thumbnail_url: string;
+          duration_seconds: number;
+          uploaded_by: string;
+          created_at?: string;
+          likes_count?: number;
+          year: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          description?: string;
+          video_url?: string;
+          thumbnail_url?: string;
+          duration_seconds?: number;
+          uploaded_by?: string;
+          created_at?: string;
+          likes_count?: number;
+          year?: string;
+        };
+        Relationships: [];
+      },
+      video_likes: {
+        Row: {
+          id: string;
+          video_id: string;
+          user_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          video_id: string;
+          user_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          video_id?: string;
+          user_id?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      },
+      albums: {
+        Row: {
+          id: string;
+          name: string;
+          description: string;
+          cover_url: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          description?: string;
+          cover_url?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          description?: string;
+          cover_url?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      },
+      album_media: {
+        Row: {
+          id: string;
+          album_id: string;
+          type: 'image' | 'video';
+          url: string;
+          thumbnail_url: string | null;
+          title: string | null;
+          description: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          album_id: string;
+          type: 'image' | 'video';
+          url: string;
+          thumbnail_url?: string | null;
+          title?: string | null;
+          description?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          album_id?: string;
+          type?: 'image' | 'video';
+          url?: string;
+          thumbnail_url?: string | null;
+          title?: string | null;
+          description?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      },
     }
     Views: {
       [_ in never]: never

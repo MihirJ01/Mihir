@@ -7,7 +7,8 @@ import {
   FileText, 
   Megaphone,
   GraduationCap,
-  Lock
+  Lock,
+  Video
 } from "lucide-react";
 import {
   Sidebar,
@@ -48,7 +49,7 @@ const menuItems = [
     adminOnly: true,
   },
   {
-    title: "Notes (Class 1-8)",
+    title: "Notes",
     icon: BookOpen,
     id: "notes",
     adminOnly: false,
@@ -57,6 +58,12 @@ const menuItems = [
     title: "Announcements",
     icon: Megaphone,
     id: "announcements",
+    adminOnly: false,
+  },
+  {
+    title: "Memories",
+    icon: Video,
+    id: "memories",
     adminOnly: false,
   },
 ];

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -114,7 +113,7 @@ export function useSupabaseData<T extends TableName>(
     };
   }, [tableName]); // Only depend on tableName, not orderBy to avoid unnecessary re-subscriptions
 
-  const addItem = async (item: Omit<TableInsert<T>, 'id' | 'created_at'>) => {
+  const addItem = async (item: Omit<TableInsert<T>, 'id' | 'created_at'>, showToast = true) => {
     try {
       const { data: result, error } = await supabase
         .from(tableName)
@@ -132,10 +131,12 @@ export function useSupabaseData<T extends TableName>(
         return null;
       }
 
+      if (showToast) {
       toast({
         title: "Success",
         description: "Item added successfully!",
       });
+      }
 
       return result as unknown as TableRow<T>;
     } catch (error) {

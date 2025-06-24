@@ -49,6 +49,12 @@ export function LoginPanel() {
         });
         return;
       }
+      login(role as "admin" | "user", name, student.class, student.board);
+      toast({
+        title: "Success",
+        description: `Welcome User ${name}!`,
+      });
+      return;
     }
 
     console.log("LoginPanel - attempting login with:", { role, name });

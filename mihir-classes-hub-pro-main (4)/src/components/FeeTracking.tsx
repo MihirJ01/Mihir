@@ -1,15 +1,16 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { CreditCard, Plus, Download, DollarSign, AlertCircle, Users } from "lucide-react";
+import { CreditCard, Plus, Download, DollarSign, AlertCircle, Users, Trash2, MoreVertical } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { exportToExcel } from "@/utils/excelExport";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { StudentFeeCard } from "./StudentFeeCard";
 import { useFeeCalculations } from "@/hooks/useFeeCalculations";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Student {
   id: string;
@@ -42,14 +43,19 @@ interface FeeRecord {
 
 export function FeeTracking() {
   const { data: studentsData, refetch: refetchStudents } = useSupabaseData("students");
-  const { data: feeRecordsData, addItem: addFeeRecord, refetch: refetchFeeRecords } = useSupabaseData("fee_records");
+  const { data: feeRecordsData, addItem: addFeeRecord, refetch: refetchFeeRecords, deleteItem } = useSupabaseData("fee_records", { column: "created_at", ascending: true });
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState("");
-  const [termNumber, setTermNumber] = useState("");
   const { toast } = useToast();
+  const [draggingCardId, setDraggingCardId] = useState<string | null>(null);
+  const [dragOverDustbin, setDragOverDustbin] = useState(false);
+  const [selectedBatch, setSelectedBatch] = useState<string>("all");
 
   const students = studentsData as Student[];
   const fees = feeRecordsData as FeeRecord[];
+
+  // Get unique batch times from students
+  const batchOptions = Array.from(new Set(students.map(s => s.batch_time).filter(Boolean)));
 
   // Recalculate statistics when data changes
   const { totalPending, totalPaid, overdueCount } = (() => {
@@ -57,22 +63,13 @@ export function FeeTracking() {
     let paid = 0;
     let overdue = 0;
 
-    fees.forEach(fee => {
-      const student = students.find(s => s.id === fee.student_id);
-      if (student) {
-        // Recalculate based on current student data
-        const termDuration = student.term_type === "2 months" ? 2 : 
-                            student.term_type === "3 months" ? 3 : 4;
-        const yearlyFee = (12 / termDuration) * student.fee_amount;
-        const currentTotalPaid = fee.total_paid || 0;
-        const currentRemaining = Math.max(0, yearlyFee - currentTotalPaid);
-        
-        pending += currentRemaining;
-        paid += currentTotalPaid;
-        
+    fees
+      .filter(fee => students.some(s => s.id === fee.student_id))
+      .forEach(fee => {
+        pending += fee.remaining_amount || 0;
+        paid += fee.total_paid || 0;
         if (fee.status === "pending" && new Date(fee.due_date) < new Date()) {
           overdue++;
-        }
       }
     });
 
@@ -80,46 +77,43 @@ export function FeeTracking() {
   })();
 
   const handleAddFeeRecord = async () => {
-    if (!selectedStudent || !termNumber) {
+    if (!selectedStudent) {
       toast({
         title: "Error",
-        description: "Please select a student and term number",
+        description: "Please select a student",
         variant: "destructive",
       });
       return;
     }
-
     const student = students.find(s => s.id === selectedStudent);
     if (!student) return;
-
-    const termDuration = student.term_type === "2 months" ? 2 : 
-                        student.term_type === "3 months" ? 3 : 4;
-    const dueDate = new Date();
-    dueDate.setMonth(dueDate.getMonth() + termDuration);
-
-    // Calculate yearly fee
-    const yearlyFee = (12 / termDuration) * student.fee_amount;
-
-    const feeRecord = {
-      student_id: student.id,
-      student_name: student.name,
-      class: student.class,
-      amount: yearlyFee,
-      term_type: student.term_type,
-      term_number: parseInt(termNumber),
-      due_date: dueDate.toISOString().split('T')[0],
-      status: "pending" as const,
-      remaining_amount: yearlyFee,
-      total_paid: 0,
-    };
-
-    const result = await addFeeRecord(feeRecord);
-    
-    if (result) {
-      setSelectedStudent("");
-      setTermNumber("");
-      setIsAddDialogOpen(false);
+    let numberOfTerms = 4;
+    let termDuration = 3; // default for 4 terms (3 months per term)
+    if (student.board === "CBSE") {
+      termDuration = student.term_type === "2 months" ? 2 :
+                     student.term_type === "3 months" ? 3 : 4;
+      numberOfTerms = 12 / termDuration;
     }
+    const perTermFee = student.fee_amount;
+    for (let i = 1; i <= numberOfTerms; i++) {
+      const dueDate = new Date();
+      dueDate.setMonth(dueDate.getMonth() + termDuration * (i - 1));
+      const feeRecord = {
+        student_id: student.id,
+        student_name: student.name,
+        class: student.class,
+        amount: perTermFee,
+        term_type: student.term_type,
+        term_number: i,
+        due_date: dueDate.toISOString().split('T')[0],
+        status: "pending" as const,
+        remaining_amount: perTermFee,
+        total_paid: 0,
+      };
+      await addFeeRecord(feeRecord);
+    }
+    setSelectedStudent("");
+    setIsAddDialogOpen(false);
   };
 
   const handlePaymentAdded = () => {
@@ -162,6 +156,28 @@ export function FeeTracking() {
       title: "Success",
       description: "Fee data exported to Excel successfully!",
     });
+  };
+
+  // Handler to reset all pending amounts to zero
+  const handleResetAllPending = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      for (const fee of fees) {
+        await supabase
+          .from('fee_records')
+          .update({
+            total_paid: fee.amount,
+            remaining_amount: 0,
+            status: 'paid',
+            paid_date: today
+          })
+          .eq('id', fee.id);
+      }
+      toast({ title: 'Success', description: 'All pending amounts reset to zero!' });
+      refetchFeeRecords();
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to reset pending amounts', variant: 'destructive' });
+    }
   };
 
   return (
@@ -211,21 +227,6 @@ export function FeeTracking() {
                     </SelectContent>
                   </Select>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Term Number</label>
-                  <Select value={termNumber} onValueChange={setTermNumber}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select term" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[1,2,3,4,5,6].map(num => (
-                        <SelectItem key={num} value={num.toString()}>Term {num}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
                 <Button onClick={handleAddFeeRecord} className="w-full">
                   Add Fee Record
                 </Button>
@@ -233,6 +234,20 @@ export function FeeTracking() {
             </DialogContent>
           </Dialog>
         </div>
+      </div>
+      {/* Batch Filter Dropdown */}
+      <div className="flex justify-end mb-2">
+        <Select value={selectedBatch} onValueChange={setSelectedBatch}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Filter by Batch" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Batches</SelectItem>
+            {batchOptions.map(batch => (
+              <SelectItem key={batch} value={batch}>{batch}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Statistics Cards - Responsive Grid */}
@@ -295,21 +310,48 @@ export function FeeTracking() {
           
           {/* Responsive Grid for Fee Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-            {fees.map((feeRecord) => {
-              const student = students.find(s => s.id === feeRecord.student_id);
-              if (!student) return null;
-              
+            {students.map((student) => {
+              const studentFeeRecords = fees.filter(fee => fee.student_id === student.id);
+              if (studentFeeRecords.length === 0) return null;
+              if (selectedBatch !== "all" && student.batch_time !== selectedBatch) return null;
               return (
                 <StudentFeeCard
-                  key={feeRecord.id}
+                  key={student.id}
                   student={student}
-                  feeRecord={feeRecord}
+                  feeRecords={studentFeeRecords}
                   onPaymentAdded={handlePaymentAdded}
                   onCardDeleted={handleCardDeleted}
+                  draggable={true}
+                  onDragStart={(id) => setDraggingCardId(id)}
+                  onDragEnd={() => setDraggingCardId(null)}
                 />
               );
             })}
           </div>
+          {/* Dustbin for drag-to-delete */}
+          {draggingCardId && (
+            <div
+              className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center transition-all ${dragOverDustbin ? "scale-110" : "scale-100"}`}
+              onDragOver={e => { e.preventDefault(); setDragOverDustbin(true); }}
+              onDragLeave={() => setDragOverDustbin(false)}
+              onDrop={async e => {
+                setDragOverDustbin(false);
+                setDraggingCardId(null);
+                // Delete the fee record for this card
+                const fee = fees.find(f => f.student_id === draggingCardId);
+                if (fee) {
+                  await deleteItem(fee.id);
+                  handleCardDeleted();
+                }
+              }}
+              style={{ pointerEvents: "all" }}
+            >
+              <div className={`bg-white shadow-lg rounded-full p-4 border-2 ${dragOverDustbin ? "border-red-600" : "border-gray-300"}`}>
+                <Trash2 className={`w-10 h-10 ${dragOverDustbin ? "text-red-600" : "text-gray-500"}`} />
+              </div>
+              <span className="mt-2 text-sm font-semibold text-gray-700">Drop here to delete</span>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

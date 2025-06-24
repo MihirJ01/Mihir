@@ -16,6 +16,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Button } from "@/components/ui/button";
 import { LogOut, Menu } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Memories } from "@/components/Memories";
 
 const AppDashboard = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
@@ -61,6 +62,8 @@ const AppDashboard = () => {
         return <NotesSection />;
       case "announcements":
         return <Announcements />;
+      case "memories":
+        return <Memories />;
       default:
         return (
           <ProtectedRoute requireAdmin>

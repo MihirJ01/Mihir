@@ -299,47 +299,47 @@ export function WorkSystem() {
               <CardContent>
                 <p className="text-gray-700 mb-4">{assignment.description}</p>
                 {assignedStudents.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="font-medium text-gray-900">Student Submissions:</h4>
-                    {assignedStudents.map((student) => {
-                      const status = getSubmissionStatus(assignment.id, student.id);
-                      return (
-                        <div key={student.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                          <div>
-                            <span className="font-medium text-gray-900">{student.name}</span>
-                            <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
-                              status === "submitted" 
-                                ? "bg-green-100 text-green-800"
-                                : status === "late"
-                                ? "bg-red-100 text-red-800"
-                                : "bg-orange-100 text-orange-800"
-                            }`}>
-                              {status.charAt(0).toUpperCase() + status.slice(1)}
-                            </span>
-                          </div>
-                          {status === "pending" && (
-                            <div className="flex gap-2">
-                              <Button 
-                                size="sm" 
-                                onClick={() => markSubmission(assignment.id, student.id, "submitted")}
-                                className="bg-green-600 hover:bg-green-700"
-                              >
-                                Mark Submitted
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="destructive"
-                                onClick={() => markSubmission(assignment.id, student.id, "late")}
-                              >
-                                Mark Late
-                              </Button>
-                            </div>
-                          )}
+                <div className="space-y-2">
+                  <h4 className="font-medium text-gray-900">Student Submissions:</h4>
+                  {assignedStudents.map((student) => {
+                    const status = getSubmissionStatus(assignment.id, student.id);
+                    return (
+                      <div key={student.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                        <div>
+                          <span className="font-medium text-gray-900">{student.name}</span>
+                          <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
+                            status === "submitted" 
+                              ? "bg-green-100 text-green-800"
+                              : status === "late"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-orange-100 text-orange-800"
+                          }`}>
+                            {status.charAt(0).toUpperCase() + status.slice(1)}
+                          </span>
                         </div>
-                      );
-                    })}
+                        {status === "pending" && (
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              onClick={() => markSubmission(assignment.id, student.id, "submitted")}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              Mark Submitted
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="destructive"
+                              onClick={() => markSubmission(assignment.id, student.id, "late")}
+                            >
+                              Mark Late
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                   </div>
-                )}
+                  )}
               </CardContent>
             </Card>
           );

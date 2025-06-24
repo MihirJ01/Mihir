@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -103,4 +102,13 @@ export default {
 		}
 	},
 	plugins: [require("tailwindcss-animate")],
+	safelist: [
+		'animate-float',
+		'delay-1000',
+		'delay-1500',
+		'delay-2000',
+		'delay-2500',
+		'delay-3000',
+		'delay-3500',
+	],
 } satisfies Config;

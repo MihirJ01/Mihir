@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,15 +6,30 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
-import { BookOpen, Plus, Download, FileText } from "lucide-react";
+import { BookOpen, Plus, Download, FileText, MoreVertical, Paperclip } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { exportToExcel } from "@/utils/excelExport";
 import type { Database } from "@/integrations/supabase/types";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 
 type Note = Database['public']['Tables']['notes']['Row'];
 
+function renderNoteContent(content: string) {
+  // Split by whitespace and newlines, match URLs
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = content.split(urlRegex);
+  return parts.map((part, i) => {
+    if (part.match(urlRegex)) {
+      return (
+        <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline break-all">{part}</a>
+      );
+    }
+    return part;
+  });
+}
+
 export function NotesSection() {
-  const { data: notes, addItem } = useSupabaseData("notes", { column: "created_at", ascending: false });
+  const { data: notes, addItem, deleteItem } = useSupabaseData("notes", { column: "created_at", ascending: false });
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState("all");
   const [selectedBoard, setSelectedBoard] = useState("all");
@@ -28,6 +42,9 @@ export function NotesSection() {
     board: "",
     subject: "",
   });
+
+  const [showLinkInput, setShowLinkInput] = useState(false);
+  const [linkValue, setLinkValue] = useState("");
 
   const handleAddNote = async () => {
     if (!newNote.title || !newNote.content || !newNote.class || !newNote.board || !newNote.subject) {
@@ -89,7 +106,7 @@ export function NotesSection() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Notes Section (Class 1-8)</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Notes Section</h2>
           <p className="text-gray-600">Manage study notes for CBSE and State Board</p>
         </div>
         <div className="flex gap-3">
@@ -126,7 +143,7 @@ export function NotesSection() {
                         <SelectValue placeholder="Select class" />
                       </SelectTrigger>
                       <SelectContent>
-                        {[1,2,3,4,5,6,7,8].map(num => (
+                        {[1,2,3,4,5,6,7,8,9].map(num => (
                           <SelectItem key={num} value={num.toString()}>Class {num}</SelectItem>
                         ))}
                       </SelectContent>
@@ -157,13 +174,42 @@ export function NotesSection() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center justify-between">
+                    <span>Content</span>
+                    <Button type="button" size="icon" variant="ghost" onClick={() => setShowLinkInput(v => !v)} title="Attach Link">
+                      <Paperclip className="w-4 h-4" />
+                    </Button>
+                  </label>
                   <Textarea
                     value={newNote.content}
                     onChange={(e) => setNewNote({...newNote, content: e.target.value})}
                     placeholder="Enter note content..."
                     rows={6}
                   />
+                  {showLinkInput && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <Input
+                        value={linkValue}
+                        onChange={e => setLinkValue(e.target.value)}
+                        placeholder="Paste or type a link (https://...)"
+                        className="flex-1"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => {
+                          if (linkValue) {
+                            setNewNote(n => ({ ...n, content: n.content + (n.content ? "\n" : "") + linkValue }));
+                            setLinkValue("");
+                            setShowLinkInput(false);
+                          }
+                        }}
+                        disabled={!linkValue}
+                      >
+                        Attach
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 <Button onClick={handleAddNote} className="w-full">
@@ -182,7 +228,7 @@ export function NotesSection() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Classes</SelectItem>
-            {[1,2,3,4,5,6,7,8].map(num => (
+            {[1,2,3,4,5,6,7,8,9].map(num => (
               <SelectItem key={num} value={num.toString()}>Class {num}</SelectItem>
             ))}
           </SelectContent>
@@ -206,9 +252,19 @@ export function NotesSection() {
             <CardHeader>
               <CardTitle className="flex items-start justify-between">
                 <div className="flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-blue-600" />
+                  <BookOpen className="w-5 h-5 text-blue-600" />
                   <span className="text-lg font-semibold">{note.title}</span>
                 </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="p-1 rounded-full hover:bg-gray-100 focus:outline-none">
+                      <MoreVertical className="w-5 h-5 text-gray-500" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => deleteItem(note.id)} className="text-red-600">Delete</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </CardTitle>
               <div className="flex gap-2 text-sm text-gray-600">
                 <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">Class {note.class}</span>
@@ -217,7 +273,7 @@ export function NotesSection() {
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-700 line-clamp-4">{note.content}</p>
+              <div className="text-gray-700 line-clamp-4 whitespace-pre-line">{renderNoteContent(note.content)}</div>
               <p className="text-sm text-gray-500 mt-3">Created: {note.created_date}</p>
             </CardContent>
           </Card>

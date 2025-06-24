@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -72,52 +71,40 @@ export function PaymentDialog({
     }
 
     setIsSubmitting(true);
-    
     try {
-      console.log("Starting payment submission...", {
-        student_id: student.id,
-        amount_paid: Number(amount),
-        payment_date: paymentDate,
-        payment_method: paymentMethod,
-        student_name: student.name,
-        remarks: remarks || null
-      });
+      let paymentLeft = Number(amount);
+      // Fetch all fee records for the student, ordered by term_number
+      const { data: feeRecords, error: feeRecordsError } = await supabase
+        .from('fee_records')
+        .select('*')
+        .eq('student_id', student.id)
+        .order('term_number', { ascending: true });
+      if (feeRecordsError) throw new Error('Failed to fetch fee records');
 
-      // Add payment record
-      const { data: paymentData, error: paymentError } = await supabase
+      for (const term of feeRecords) {
+        if (paymentLeft <= 0) break;
+        const termRemaining = term.remaining_amount || (term.amount - (term.total_paid || 0));
+        if (termRemaining <= 0) continue; // Already paid
+        const payToThisTerm = Math.min(paymentLeft, termRemaining);
+
+        // Insert payment record for this term
+        const { error: paymentError } = await supabase
         .from('fee_payments')
         .insert({
           student_id: student.id,
-          amount_paid: Number(amount),
+            amount_paid: payToThisTerm,
           payment_date: paymentDate,
           payment_method: paymentMethod,
           student_name: student.name,
           remarks: remarks || null,
-          fee_record_id: feeRecord?.id || null
-        })
-        .select()
-        .single();
+            fee_record_id: term.id
+          });
+        if (paymentError) throw new Error('Failed to record payment');
 
-      if (paymentError) {
-        console.error('Error adding payment:', paymentError);
-        throw new Error(`Failed to record payment: ${paymentError.message}`);
-      }
-
-      console.log("Payment added successfully:", paymentData);
-
-      // Update fee record if it exists
-      if (feeRecord) {
-        const newTotalPaid = (feeRecord.total_paid || 0) + Number(amount);
-        const newRemainingAmount = Math.max(0, yearlyFee - newTotalPaid);
+        // Update fee record for this term
+        const newTotalPaid = (term.total_paid || 0) + payToThisTerm;
+        const newRemainingAmount = Math.max(0, term.amount - newTotalPaid);
         const newStatus = newRemainingAmount <= 0 ? "paid" : "pending";
-
-        console.log("Updating fee record:", {
-          id: feeRecord.id,
-          total_paid: newTotalPaid,
-          remaining_amount: newRemainingAmount,
-          status: newStatus
-        });
-
         const { error: updateError } = await supabase
           .from('fee_records')
           .update({
@@ -126,21 +113,13 @@ export function PaymentDialog({
             status: newStatus,
             paid_date: newStatus === "paid" ? paymentDate : null
           })
-          .eq('id', feeRecord.id);
+          .eq('id', term.id);
+        if (updateError) throw new Error('Failed to update fee record');
 
-        if (updateError) {
-          console.error('Error updating fee record:', updateError);
-          // Don't throw here as payment was already recorded
-          toast({
-            title: "Warning",
-            description: "Payment recorded but fee record update failed. Please refresh the page.",
-            variant: "destructive",
-          });
-        } else {
-          console.log("Fee record updated successfully");
-        }
+        paymentLeft -= payToThisTerm;
       }
 
+      // Show success toast only once
       toast({
         title: "Success",
         description: "Payment recorded successfully!",
@@ -153,7 +132,6 @@ export function PaymentDialog({
       setPaymentDate(new Date().toISOString().split('T')[0]);
       onOpenChange(false);
       onPaymentAdded();
-
     } catch (error) {
       console.error('Payment submission error:', error);
       toast({

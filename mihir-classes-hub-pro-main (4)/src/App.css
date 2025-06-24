@@ -40,3 +40,24 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Floating animation for decorative icons */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+  100% { transform: translateY(0px); }
+}
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Animation delay utility classes */
+.delay-1000 { animation-delay: 1s !important; }
+.delay-1500 { animation-delay: 1.5s !important; }
+.delay-2000 { animation-delay: 2s !important; }
+.delay-2500 { animation-delay: 2.5s !important; }
+.delay-3000 { animation-delay: 3s !important; }
+.delay-3500 { animation-delay: 3.5s !important; }
+
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }

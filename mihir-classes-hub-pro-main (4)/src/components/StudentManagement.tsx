@@ -10,6 +10,8 @@ import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { Plus, Users, Download, Search, MoreVertical, Edit, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { exportToExcel } from "@/utils/excelExport";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Student {
   id: string;
@@ -22,6 +24,7 @@ interface Student {
   fee_amount: number;
   term_type: string;
   created_at: string;
+  profile_photo_url: string;
 }
 
 const BATCH_TIMES = [
@@ -37,6 +40,12 @@ export function StudentManagement() {
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
+  const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState<string>("");
+  const [uploading, setUploading] = useState(false);
+  const [editProfilePhoto, setEditProfilePhoto] = useState<File | null>(null);
+  const [editProfilePhotoUrl, setEditProfilePhotoUrl] = useState<string>("");
+  const [editUploading, setEditUploading] = useState(false);
 
   const students = studentsData as Student[];
 
@@ -51,12 +60,11 @@ export function StudentManagement() {
     password: "",
   });
 
-  // Auto-set term type based on board selection
+  // Remove auto-set term type based on board selection
   const handleBoardChange = (board: string) => {
     setNewStudent({
-      ...newStudent, 
-      board,
-      term_type: board === "CBSE" ? "4 months" : "3 months"
+      ...newStudent,
+      board
     });
   };
 
@@ -89,6 +97,7 @@ export function StudentManagement() {
       password: newStudent.password,
       fee_amount: parseInt(newStudent.fee_amount),
       term_type: newStudent.term_type as "2 months" | "3 months" | "4 months",
+      profile_photo_url: profilePhotoUrl || "",
     };
 
     const result = await addItem(studentData);
@@ -118,13 +127,15 @@ export function StudentManagement() {
       batch_time: editingStudent.batch_time,
       fee_amount: editingStudent.fee_amount,
       term_type: editingStudent.term_type,
+      profile_photo_url: editProfilePhotoUrl || editingStudent.profile_photo_url || "",
     };
 
     const result = await updateItem(editingStudent.id, updates);
-    
     if (result) {
       setIsEditDialogOpen(false);
       setEditingStudent(null);
+      setEditProfilePhoto(null);
+      setEditProfilePhotoUrl("");
     }
   };
 
@@ -158,6 +169,35 @@ export function StudentManagement() {
       title: "Success",
       description: "Students data exported to Excel successfully!",
     });
+  };
+
+  // Helper to upload photo to Supabase Storage
+  const uploadProfilePhoto = async (file: File) => {
+    setUploading(true);
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+    const { data, error } = await supabase.storage.from('profile-photos').upload(fileName, file, {
+      cacheControl: '3600',
+      upsert: false
+    });
+    setUploading(false);
+    if (error) {
+      toast({ title: 'Error', description: 'Failed to upload photo', variant: 'destructive' });
+      return '';
+    }
+    // Get public URL
+    const { data: urlData } = supabase.storage.from('profile-photos').getPublicUrl(fileName);
+    return urlData?.publicUrl || '';
+  };
+
+  // Helper to delete photo from Supabase Storage
+  const deleteProfilePhotoFromStorage = async (url: string) => {
+    if (!url) return;
+    // Extract the file path after the bucket name
+    const match = url.match(/profile-photos\/(.*)$/);
+    if (!match) return;
+    const filePath = match[1];
+    await supabase.storage.from('profile-photos').remove([filePath]);
   };
 
   if (loading) {
@@ -230,7 +270,7 @@ export function StudentManagement() {
                       <SelectValue placeholder="Select class" />
                     </SelectTrigger>
                     <SelectContent>
-                      {[1,2,3,4,5,6,7,8,9,10,11,12].map(num => (
+                      {[1,2,3,4,5,6,7,8,9].map(num => (
                         <SelectItem key={num} value={num.toString()}>Class {num}</SelectItem>
                       ))}
                     </SelectContent>
@@ -238,14 +278,17 @@ export function StudentManagement() {
                 </div>
 
                 <div>
-                  <Label htmlFor="board">Board *</Label>
-                  <Select onValueChange={handleBoardChange}>
-                    <SelectTrigger>
+                  <Label htmlFor="board">Board</Label>
+                  <Select
+                    value={newStudent.board}
+                    onValueChange={val => handleBoardChange(val)}
+                  >
+                    <SelectTrigger id="board">
                       <SelectValue placeholder="Select board" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="CBSE">CBSE (4 months term)</SelectItem>
-                      <SelectItem value="State Board">State Board (3 months term)</SelectItem>
+                      <SelectItem value="CBSE">CBSE</SelectItem>
+                      <SelectItem value="State Board">State Board</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -276,16 +319,76 @@ export function StudentManagement() {
                 </div>
 
                 <div>
-                  <Label htmlFor="termType">Term Type *</Label>
-                  <Select value={newStudent.term_type} onValueChange={(value) => setNewStudent({...newStudent, term_type: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Auto-selected based on board" />
+                  <Label htmlFor="term_type">Term Type</Label>
+                  <Select
+                    value={newStudent.term_type}
+                    onValueChange={val => setNewStudent({ ...newStudent, term_type: val })}
+                  >
+                    <SelectTrigger id="term_type">
+                      <SelectValue placeholder="Select term type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="3 months">3 Months (State Board)</SelectItem>
-                      <SelectItem value="4 months">4 Months (CBSE)</SelectItem>
+                      <SelectItem value="3 months">3 months</SelectItem>
+                      <SelectItem value="4 months">4 months</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+
+                {/* Profile Photo Upload */}
+                <div>
+                  <Label>Profile Photo (optional)</Label>
+                  <div
+                    className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-4 cursor-pointer hover:bg-gray-50"
+                    onDragOver={e => e.preventDefault()}
+                    onDrop={async e => {
+                      e.preventDefault();
+                      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                        setProfilePhoto(e.dataTransfer.files[0]);
+                        const url = await uploadProfilePhoto(e.dataTransfer.files[0]);
+                        setProfilePhotoUrl(url);
+                      }
+                    }}
+                  >
+                    <div className="relative">
+                      <Avatar className="h-20 w-20 mb-2">
+                        {profilePhotoUrl ? (
+                          <AvatarImage src={profilePhotoUrl} alt="Profile Photo" />
+                        ) : (
+                          <AvatarFallback>
+                            <span className="text-3xl">👤</span>
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      {profilePhotoUrl && (
+                        <button
+                          type="button"
+                          className="absolute top-0 right-0 bg-white rounded-full p-1 shadow hover:bg-gray-100"
+                          onClick={() => {
+                            setProfilePhoto(null);
+                            setProfilePhotoUrl("");
+                          }}
+                          aria-label="Remove photo"
+                        >
+                          <Trash2 className="w-5 h-5 text-red-500" />
+                        </button>
+                      )}
+                    </div>
+                    {uploading && <span className="text-xs text-blue-600">Uploading...</span>}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      id="profile-photo-input"
+                      onChange={async e => {
+                        if (e.target.files && e.target.files[0]) {
+                          setProfilePhoto(e.target.files[0]);
+                          const url = await uploadProfilePhoto(e.target.files[0]);
+                          setProfilePhotoUrl(url);
+                        }
+                      }}
+                    />
+                    <label htmlFor="profile-photo-input" className="cursor-pointer text-blue-600 underline mt-1">Choose file</label>
+                  </div>
                 </div>
 
                 <Button onClick={handleAddStudent} className="w-full">
@@ -368,16 +471,83 @@ export function StudentManagement() {
               </div>
 
               <div>
-                <Label htmlFor="editTermType">Term Type *</Label>
-                <Select value={editingStudent.term_type} onValueChange={(value) => setEditingStudent({...editingStudent, term_type: value})}>
-                  <SelectTrigger>
+                <Label htmlFor="edit_term_type">Term Type</Label>
+                <Select
+                  value={editingStudent.term_type}
+                  onValueChange={val => setEditingStudent({...editingStudent, term_type: val})}
+                >
+                  <SelectTrigger id="edit_term_type">
                     <SelectValue placeholder="Select term type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="2 months">2 Months</SelectItem>
-                    <SelectItem value="3 months">3 Months</SelectItem>
+                    <SelectItem value="3 months">3 months</SelectItem>
+                    <SelectItem value="4 months">4 months</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* Profile Photo Upload for Edit */}
+              <div>
+                <Label>Profile Photo (optional)</Label>
+                <div
+                  className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-4 cursor-pointer hover:bg-gray-50"
+                  onDragOver={e => e.preventDefault()}
+                  onDrop={async e => {
+                    e.preventDefault();
+                    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                      setEditProfilePhoto(e.dataTransfer.files[0]);
+                      setEditUploading(true);
+                      const url = await uploadProfilePhoto(e.dataTransfer.files[0]);
+                      setEditProfilePhotoUrl(url);
+                      setEditUploading(false);
+                    }
+                  }}
+                >
+                  <div className="relative">
+                    <Avatar className="h-20 w-20 mb-2">
+                      {editProfilePhotoUrl || editingStudent.profile_photo_url ? (
+                        <AvatarImage src={editProfilePhotoUrl || editingStudent.profile_photo_url} alt="Profile Photo" />
+                      ) : (
+                        <AvatarFallback>
+                          <span className="text-3xl">👤</span>
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+                    {(editProfilePhotoUrl || editingStudent.profile_photo_url) && (
+                      <button
+                        type="button"
+                        className="absolute top-0 right-0 bg-white rounded-full p-1 shadow hover:bg-gray-100"
+                        onClick={async () => {
+                          if (editProfilePhotoUrl || editingStudent.profile_photo_url) {
+                            await deleteProfilePhotoFromStorage(editProfilePhotoUrl || editingStudent.profile_photo_url);
+                          }
+                          setEditProfilePhoto(null);
+                          setEditProfilePhotoUrl("");
+                        }}
+                        aria-label="Remove photo"
+                      >
+                        <Trash2 className="w-5 h-5 text-red-500" />
+                      </button>
+                    )}
+                  </div>
+                  {editUploading && <span className="text-xs text-blue-600">Uploading...</span>}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    id="edit-profile-photo-input"
+                    onChange={async e => {
+                      if (e.target.files && e.target.files[0]) {
+                        setEditProfilePhoto(e.target.files[0]);
+                        setEditUploading(true);
+                        const url = await uploadProfilePhoto(e.target.files[0]);
+                        setEditProfilePhotoUrl(url);
+                        setEditUploading(false);
+                      }
+                    }}
+                  />
+                  <label htmlFor="edit-profile-photo-input" className="cursor-pointer text-blue-600 underline mt-1">Choose file</label>
+                </div>
               </div>
 
               <Button onClick={handleEditStudent} className="w-full">
@@ -408,30 +578,42 @@ export function StudentManagement() {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
+            <table className="min-w-full bg-white border rounded-lg">
               <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left p-3 font-semibold text-gray-700">Name</th>
-                  <th className="text-left p-3 font-semibold text-gray-700">Username</th>
-                  <th className="text-left p-3 font-semibold text-gray-700">Class</th>
-                  <th className="text-left p-3 font-semibold text-gray-700">Board</th>
-                  <th className="text-left p-3 font-semibold text-gray-700">Batch Time</th>
-                  <th className="text-left p-3 font-semibold text-gray-700">Fee Amount</th>
-                  <th className="text-left p-3 font-semibold text-gray-700">Term Type</th>
-                  <th className="text-left p-3 font-semibold text-gray-700">Actions</th>
+                <tr>
+                  <th className="px-4 py-2">Photo</th>
+                  <th className="px-4 py-2">Name</th>
+                  <th className="px-4 py-2">Class</th>
+                  <th className="px-4 py-2">Board</th>
+                  <th className="px-4 py-2">Batch Time</th>
+                  <th className="px-4 py-2">Username</th>
+                  <th className="px-4 py-2">Fee Amount</th>
+                  <th className="px-4 py-2">Term Type</th>
+                  <th className="px-4 py-2">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredStudents.map((student) => (
-                  <tr key={student.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="p-3 font-medium text-gray-900">{student.name}</td>
-                    <td className="p-3 text-gray-700">{student.username}</td>
-                    <td className="p-3 text-gray-700">Class {student.class}</td>
-                    <td className="p-3 text-gray-700">{student.board}</td>
-                    <td className="p-3 text-gray-700">{student.batch_time}</td>
-                    <td className="p-3 text-gray-700">₹{student.fee_amount}</td>
-                    <td className="p-3 text-gray-700">{student.term_type}</td>
-                    <td className="p-3">
+                {filteredStudents.map(student => (
+                  <tr key={student.id} className="border-t">
+                    <td className="px-4 py-2 text-center">
+                      <Avatar className="h-10 w-10 mx-auto">
+                        {student.profile_photo_url ? (
+                          <AvatarImage src={student.profile_photo_url} alt={student.name} />
+                        ) : (
+                          <AvatarFallback>
+                            <span className="text-xl">👤</span>
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                    </td>
+                    <td className="px-4 py-2">{student.name}</td>
+                    <td className="px-4 py-2">{student.class}</td>
+                    <td className="px-4 py-2">{student.board}</td>
+                    <td className="px-4 py-2">{student.batch_time}</td>
+                    <td className="px-4 py-2">{student.username}</td>
+                    <td className="px-4 py-2">₹{student.fee_amount}</td>
+                    <td className="px-4 py-2">{student.term_type}</td>
+                    <td className="px-4 py-2">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
