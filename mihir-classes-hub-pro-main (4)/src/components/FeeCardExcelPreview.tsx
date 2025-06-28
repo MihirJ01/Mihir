@@ -32,8 +32,25 @@ export default function FeeCardExcelPreview({ student, payments, logoUrl }: FeeC
   const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount_paid), 0);
   const balance = yearlyFee - totalPaid;
 
-  // Map payments to terms (assume one payment per term for preview)
-  const termPayments = FEE_TERMS.map((_, i) => payments[i] || null);
+  // Group payments by term (assuming payments are in order and each term is student.fee_amount)
+  const paymentsByTerm = [[], [], [], []];
+  let paymentIdx = 0;
+  let left = payments.map(p => Number(p.amount_paid));
+  for (let termIdx = 0; termIdx < 4; termIdx++) {
+    let termLeft = student.fee_amount;
+    while (paymentIdx < payments.length && termLeft > 0) {
+      const pay = Math.min(left[paymentIdx], termLeft);
+      if (pay > 0) {
+        paymentsByTerm[termIdx].push({
+          ...payments[paymentIdx],
+          amount_paid: pay,
+        });
+        left[paymentIdx] -= pay;
+        termLeft -= pay;
+      }
+      if (left[paymentIdx] <= 0) paymentIdx++;
+    }
+  }
 
   return (
     <div className="bg-white border-2 border-black rounded-xl p-0 max-w-xl mx-auto shadow-xl overflow-visible" style={{ fontFamily: 'Calibri, Arial, sans-serif', fontSize: 15 }}>
@@ -80,15 +97,20 @@ export default function FeeCardExcelPreview({ student, payments, logoUrl }: FeeC
           <div className="border-r-2 border-black bg-green-200 min-h-[2.5rem] flex-1 flex items-center justify-center px-2 py-1 break-words">Paid</div>
           <div className="min-h-[2.5rem] flex-1 px-2 py-1"></div>
         </div>
-        {FEE_TERMS.map((term, i) => (
-          <div className="flex w-full text-center border-b-2 border-black last:border-b-0 bg-white">
-            <div className="border-r-2 border-black py-1 min-h-[2.5rem] flex-1 flex items-center justify-center px-2 break-words">{term}</div>
-            <div className="border-r-2 border-black py-1 min-h-[2.5rem] flex-1 flex items-center justify-center px-2 break-words">{student.fee_amount}</div>
-            <div className="border-r-2 border-black py-1 min-h-[2.5rem] flex-1 flex items-center justify-center px-2 break-words">{termPayments[i]?.payment_date ? new Date(termPayments[i].payment_date).toLocaleDateString() : ""}</div>
-            <div className="border-r-2 border-black py-1 min-h-[2.5rem] flex-1 flex items-center justify-center px-2 break-words">{termPayments[i]?.amount_paid ? termPayments[i].amount_paid : ""}</div>
-            <div className="py-1 min-h-[2.5rem] flex-1 px-2 break-words"></div>
-          </div>
-        ))}
+        {FEE_TERMS.map((term, i) => {
+          const termPays = paymentsByTerm[i];
+          const paidDates = termPays.map(p => new Date(p.payment_date).toLocaleDateString()).join(", ");
+          const paidAmounts = termPays.map(p => p.amount_paid).join(", ");
+          return (
+            <div className="flex w-full text-center border-b-2 border-black last:border-b-0 bg-white" key={term}>
+              <div className="border-r-2 border-black py-1 min-h-[2.5rem] flex-1 flex items-center justify-center px-2 break-words">{term}</div>
+              <div className="border-r-2 border-black py-1 min-h-[2.5rem] flex-1 flex items-center justify-center px-2 break-words">{student.fee_amount}</div>
+              <div className="border-r-2 border-black py-1 min-h-[2.5rem] flex-1 flex items-center justify-center px-2 break-words">{paidDates}</div>
+              <div className="border-r-2 border-black py-1 min-h-[2.5rem] flex-1 flex items-center justify-center px-2 break-words">{paidAmounts}</div>
+              <div className="py-1 min-h-[2.5rem] flex-1 px-2 break-words"></div>
+            </div>
+          );
+        })}
       </div>
       {/* Balance and Total */}
       <div className="flex w-full border-b-2 border-black bg-white">
