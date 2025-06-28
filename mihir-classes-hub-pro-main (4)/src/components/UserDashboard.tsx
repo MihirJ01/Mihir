@@ -2,7 +2,7 @@ import { StudentAnalytics } from "./StudentAnalytics";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Announcements } from "./Announcements";
-import { Bell, BookOpen, Video, Sparkles, Star, School, Target } from "lucide-react";
+import { Bell, BookOpen, Video, Sparkles, Star, School, Target, Home } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
+import FeeCardExcelPreview from "./FeeCardExcelPreview";
 
 export function UserDashboard() {
   const { user, logout } = useAuth();
@@ -52,6 +53,7 @@ export function UserDashboard() {
     return acc;
   }, {});
   const attendanceChartData = Object.values(attendanceByWeek).reverse();
+  const { data: payments = [] } = useSupabaseData("fee_payments");
 
   // Find unread announcements
   const unread = announcements.filter((a: any) => !readIds.includes(a.id));
@@ -102,6 +104,9 @@ export function UserDashboard() {
       <div className="sticky top-0 z-30 bg-gradient-to-r from-blue-500 to-blue-400 shadow-md border-b border-blue-200 rounded-b-2xl">
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 flex flex-col sm:flex-row justify-between items-center py-2 gap-3 sm:gap-0">
           <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto justify-center sm:justify-start">
+            <Button variant="ghost" size="icon" aria-label="Home" className="rounded-full bg-blue-100 hover:bg-blue-200 shadow-md mr-2" onClick={() => { setShowMemories(false); setShowNotes(false); setShowAnnouncements(false); }}>
+              <Home className="w-6 h-6 text-blue-600" />
+            </Button>
             <span className="text-2xl sm:text-3xl mr-1 sm:mr-2">👤</span>
             <div>
               <div className="text-white font-extrabold text-base sm:text-lg md:text-2xl drop-shadow">User Dashboard</div>
@@ -110,19 +115,19 @@ export function UserDashboard() {
           </div>
           <div className="flex gap-3 sm:gap-6 items-center w-full sm:w-auto justify-center sm:justify-end">
             <div className="flex flex-col items-center">
-              <Button variant="ghost" size="icon" onClick={() => setShowMemories(true)} aria-label="Memories" className="rounded-full bg-blue-100 hover:bg-blue-200 shadow-md">
+              <Button variant="ghost" size="icon" onClick={() => { setShowMemories(true); setShowNotes(false); setShowAnnouncements(false); }} aria-label="Memories" className="rounded-full bg-blue-100 hover:bg-blue-200 shadow-md">
                 <Video className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
               </Button>
               <span className="text-[10px] sm:text-xs text-white mt-1">Memories</span>
             </div>
             <div className="flex flex-col items-center">
-              <Button variant="ghost" size="icon" onClick={() => setShowNotes(true)} aria-label="Notes" className="rounded-full bg-blue-100 hover:bg-blue-200 shadow-md">
+              <Button variant="ghost" size="icon" onClick={() => { setShowNotes(true); setShowMemories(false); setShowAnnouncements(false); }} aria-label="Notes" className="rounded-full bg-blue-100 hover:bg-blue-200 shadow-md">
                 <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
               </Button>
               <span className="text-[10px] sm:text-xs text-white mt-1">Notes</span>
             </div>
             <div className="flex flex-col items-center">
-              <Button variant="ghost" size="icon" onClick={() => setShowAnnouncements(true)} aria-label="Announcements" className="rounded-full bg-blue-100 hover:bg-blue-200 shadow-md">
+              <Button variant="ghost" size="icon" onClick={() => { setShowAnnouncements(true); setShowMemories(false); setShowNotes(false); }} aria-label="Announcements" className="rounded-full bg-blue-100 hover:bg-blue-200 shadow-md">
                 <span className="relative">
                   <Bell className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
                   {unread.length > 0 && (
@@ -200,58 +205,50 @@ export function UserDashboard() {
             </Card>
           </div>
         )}
+        {/* Excel Sheet Preview for the logged-in user */}
+        {!showMemories && !showNotes && !showAnnouncements && student && (
+          <div className="mt-8 flex flex-col items-center">
+            <h2 className="text-xl font-bold text-blue-900 mb-2">Your Fee Card Preview</h2>
+            <FeeCardExcelPreview
+              student={student}
+              payments={payments.filter((p: any) => p.student_id === student.id)}
+              logoUrl="/lovable-uploads/image.png"
+            />
+          </div>
+        )}
         {showMemories ? (
-          <div>
-            <div className="mb-4">
-              <Button variant="outline" onClick={() => setShowMemories(false)}>
-                ← Back to Dashboard
-              </Button>
-            </div>
-            <div className="space-y-4">
-              <Memories isUserView />
-            </div>
+          <div className="space-y-4">
+            <Memories isUserView />
           </div>
         ) : showNotes ? (
-          <div>
-            <div className="mb-4">
-              <Button variant="outline" onClick={() => setShowNotes(false)}>
-                ← Back to Dashboard
-              </Button>
-            </div>
-            <div className="space-y-4">
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2"><BookOpen className="w-6 h-6 text-blue-600" />Notes for Class {userClass} ({userBoard})</h2>
-              {userNotes.length === 0 ? (
-                <div className="text-gray-600">No notes available for your class and board.</div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {userNotes.map((note: any) => (
-                    <div key={note.id} className="bg-white rounded-lg shadow p-4 border">
-                      <div className="flex items-center gap-2 mb-2">
-                        <BookOpen className="w-5 h-5 text-blue-600" />
-                        <span className="font-semibold text-lg">{note.title}</span>
-                      </div>
-                      <div className="flex gap-2 text-xs text-gray-600 mb-2">
-                        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">Class {note.class}</span>
-                        <span className="bg-green-100 text-green-800 px-2 py-1 rounded">{note.board}</span>
-                        <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded">{note.subject}</span>
-                      </div>
-                      <div className="text-gray-700 mb-2 line-clamp-4">{note.content}</div>
-                      <div className="text-xs text-gray-500">Created: {note.created_date}</div>
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2"><BookOpen className="w-6 h-6 text-blue-600" />Notes for Class {userClass} ({userBoard})</h2>
+            {userNotes.length === 0 ? (
+              <div className="text-gray-600">No notes available for your class and board.</div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {userNotes.map((note: any) => (
+                  <div key={note.id} className="bg-white rounded-lg shadow p-4 border">
+                    <div className="flex items-center gap-2 mb-2">
+                      <BookOpen className="w-5 h-5 text-blue-600" />
+                      <span className="font-semibold text-lg">{note.title}</span>
                     </div>
-                  ))}
+                    <div className="flex gap-2 text-xs text-gray-600 mb-2">
+                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">Class {note.class}</span>
+                      <span className="bg-green-100 text-green-800 px-2 py-1 rounded">{note.board}</span>
+                      <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded">{note.subject}</span>
+                    </div>
+                    <div className="text-gray-700 mb-2 line-clamp-4">{note.content}</div>
+                    <div className="text-xs text-gray-500">Created: {note.created_date}</div>
+                  </div>
+                ))}
               </div>
-              )}
-              </div>
-              </div>
+            )}
+          </div>
         ) : showAnnouncements ? (
           <div>
-            <div className="mb-4">
-              <Button variant="outline" onClick={() => setShowAnnouncements(false)}>
-                ← Back to Dashboard
-              </Button>
-              </div>
             <Announcements readOnly />
-        </div>
+          </div>
         ) : (
           <StudentAnalytics />
         )}

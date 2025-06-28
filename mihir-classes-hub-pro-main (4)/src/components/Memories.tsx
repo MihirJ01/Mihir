@@ -25,7 +25,7 @@ import {
 
 export function Memories({ isUserView = false }: { isUserView?: boolean } = {}) {
   const { isAdmin, user } = useAuth();
-  const { data: videos = [], addItem: addVideo } = useSupabaseData("videos", { column: "created_at", ascending: false });
+  const { data: videos = [], addItem: addVideo, refetch } = useSupabaseData("videos", { column: "created_at", ascending: false });
   const { data: likes = [], addItem: addLike } = useSupabaseData("video_likes");
   const { data: albums = [], addItem: addAlbum } = useSupabaseData("albums", { column: "created_at", ascending: false });
   const { data: albumMedia = [], addItem: addAlbumMedia, deleteItem: deleteAlbumMedia } = useSupabaseData("album_media", { column: "created_at", ascending: false });
@@ -48,7 +48,7 @@ export function Memories({ isUserView = false }: { isUserView?: boolean } = {}) 
   const [showAddMedia, setShowAddMedia] = useState(false);
   const [showEditAlbum, setShowEditAlbum] = useState(false);
   const [editingAlbum, setEditingAlbum] = useState<any>(null);
-  const [editAlbumForm, setEditAlbumForm] = useState({ name: "", description: "", cover: null as File | null });
+  const [editAlbumForm, setEditAlbumForm] = useState({ name: "", description: "", cover: null as File | null, link: "" });
   const [editCoverUrl, setEditCoverUrl] = useState("");
   const [creatingAlbum, setCreatingAlbum] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -299,7 +299,13 @@ export function Memories({ isUserView = false }: { isUserView?: boolean } = {}) 
             <Card
               key={album.id}
               className={`hover:shadow-lg transition-shadow cursor-pointer relative group overflow-hidden p-0 ${selectMode && "ring-2 ring-blue-400"}`}
-              onClick={() => selectMode ? handleSelectAlbum(album.id) : openAlbum(album.id)}
+              onClick={() => {
+                if (selectMode) {
+                  handleSelectAlbum(album.id);
+                } else if (album.link) {
+                  window.open(album.link, '_blank');
+                }
+              }}
               draggable={!isUserView && isAdmin}
               onDragStart={e => {
                 if (!isUserView && isAdmin) {
@@ -333,7 +339,7 @@ export function Memories({ isUserView = false }: { isUserView?: boolean } = {}) 
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => {
                         setEditingAlbum(album);
-                        setEditAlbumForm({ name: album.name, description: album.description, cover: null });
+                        setEditAlbumForm({ name: album.name, description: album.description, cover: null, link: album.link || "" });
                         setEditCoverUrl(album.cover_url || "");
                         setShowEditAlbum(true);
                       }}>
@@ -390,6 +396,14 @@ export function Memories({ isUserView = false }: { isUserView?: boolean } = {}) 
                 <Input value={editAlbumForm.description} onChange={e => setEditAlbumForm(f => ({ ...f, description: e.target.value }))} placeholder="Description (optional)" />
               </div>
               <div>
+                <Label>Google Photos Link</Label>
+                <Input
+                  value={editAlbumForm.link || ""}
+                  onChange={e => setEditAlbumForm(f => ({ ...f, link: e.target.value }))}
+                  placeholder="Paste Google Photos link here"
+                />
+              </div>
+              <div>
                 <Label>Cover Image/Video (optional)</Label>
                 <Input type="file" accept="image/*,video/*" onChange={async e => {
                   if (e.target.files && e.target.files[0]) {
@@ -415,8 +429,10 @@ export function Memories({ isUserView = false }: { isUserView?: boolean } = {}) 
                     name: editAlbumForm.name,
                     description: editAlbumForm.description,
                     cover_url,
+                    link: editAlbumForm.link,
                   });
                   setShowEditAlbum(false);
+                  if (typeof refetch === 'function') refetch();
                 }}
                 disabled={!editAlbumForm.name}
                 className="w-full"

@@ -1,16 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { User, Plus, MoreVertical, Pencil } from "lucide-react";
 import { useFeeCalculations } from "@/hooks/useFeeCalculations";
 import { PaymentDialog } from "./PaymentDialog";
 import { FeeCardActions } from "./FeeCardActions";
-import { StudentPaymentDetails } from "./StudentPaymentDetails";
+import { StudentPaymentDetails, StudentPaymentDetailsRef } from "./StudentPaymentDetails";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/components/ui/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import html2canvas from "html2canvas";
 
 interface Student {
   id: string;
@@ -143,11 +144,12 @@ function EditFeeTermsDialog({ open, onOpenChange, terms, onSave }) {
 
 export function StudentFeeCard({ student, feeRecords, onPaymentAdded, onCardDeleted, draggable = false, onDragStart, onDragEnd }: StudentFeeCardProps) {
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
-  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const feeRecord = feeRecords[0];
   const { yearlyFee, totalPaid, remainingAmount } = useFeeCalculations(student, feeRecord);
   const { toast } = useToast();
+  const paymentDetailsRef = useRef<StudentPaymentDetailsRef>(null);
 
   // Sort feeRecords by term_number for display
   const sortedFeeRecords = [...feeRecords].sort((a, b) => (a.term_number || 0) - (b.term_number || 0));
@@ -270,6 +272,41 @@ export function StudentFeeCard({ student, feeRecords, onPaymentAdded, onCardDele
     onPaymentAdded();
   };
 
+  const handleWhatsAppClick = async () => {
+    try {
+      // First open the payment details dialog to load the data
+      setIsDetailsDialogOpen(true);
+      
+      // Wait for the dialog to open and data to load
+      setTimeout(async () => {
+        try {
+          const blob = await paymentDetailsRef.current?.captureExcelPreview();
+          if (!blob) {
+            toast({ title: 'Error', description: 'No payment data available', variant: 'destructive' });
+            setIsDetailsDialogOpen(false);
+            return;
+          }
+          
+          await navigator.clipboard.write([
+            new window.ClipboardItem({ 'image/png': blob })
+          ]);
+          
+          toast({ title: 'Copied!', description: 'Fee report image copied to clipboard. Paste it in WhatsApp Web.' });
+          window.open('https://web.whatsapp.com/', '_blank');
+          
+          // Close the dialog after copying
+          setIsDetailsDialogOpen(false);
+        } catch (error) {
+          toast({ title: 'Error', description: 'Failed to copy image to clipboard', variant: 'destructive' });
+          setIsDetailsDialogOpen(false);
+        }
+      }, 1000); // Wait 1 second for dialog to load data
+      
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to open payment details', variant: 'destructive' });
+    }
+  };
+
   return (
     <Card
       className="w-full relative bg-white/90 rounded-2xl shadow-lg border border-blue-100 hover:shadow-2xl transition-all duration-200 transform hover:-translate-y-1 animate-fade-in"
@@ -349,17 +386,26 @@ export function StudentFeeCard({ student, feeRecords, onPaymentAdded, onCardDele
           )}
         </div>
         {/* Action Buttons - Responsive */}
-        <div className="flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center mt-2">
-          <Button 
-            onClick={() => setIsPaymentDialogOpen(true)}
-            className="gap-2 bg-green-600 hover:bg-green-700 w-full sm:w-auto font-semibold rounded-lg shadow"
-            disabled={remainingAmount <= 0}
-            size="sm"
-          >
-            <Plus className="w-4 h-4" />
-            Add Payment
-          </Button>
-          <div className="flex justify-center sm:justify-end">
+        <div className="flex w-full justify-center mt-2">
+          <div className="flex flex-row gap-2">
+            <Button 
+              onClick={() => setIsPaymentDialogOpen(true)}
+              className="gap-2 bg-green-600 hover:bg-green-700 w-full sm:w-auto font-semibold rounded-lg shadow"
+              disabled={remainingAmount <= 0}
+              size="sm"
+            >
+              <Plus className="w-4 h-4" />
+              Add Payment
+            </Button>
+            <Button 
+              onClick={handleWhatsAppClick}
+              variant="outline" 
+              className="gap-2 w-full sm:w-auto font-semibold rounded-lg shadow"
+              size="sm"
+              style={{ backgroundColor: '#25D366', color: 'white', border: 'none' }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 32 32" fill="currentColor"><path d="M16.001 3.2c-7.067 0-12.8 5.733-12.8 12.8 0 2.267.6 4.467 1.733 6.4l-1.867 6.933 7.067-1.867c1.867 1.067 4 1.6 6.133 1.6h.001c7.067 0 12.8-5.733 12.8-12.8s-5.733-12.8-12.8-12.8zm6.933 19.467c-.267.8-1.467 1.467-2 1.6-.533.133-1.2.267-2.067.133-.467-.067-1.067-.2-1.867-.4-4.133-1.067-6.8-5.067-7.067-5.333-.2-.267-1.733-2.267-1.733-4.267 0-2 .8-2.933 1.067-3.2.267-.267.6-.4.8-.4.2 0 .4 0 .533.007.167.007.4.027.6.467.233.533.8 1.867.867 2.007.067.133.133.267.067.4-.067.133-.1.2-.2.333-.1.133-.2.233-.267.333-.133.2-.267.4-.133.667.133.267.6 1.067 1.267 1.733.867.867 1.6 1.133 1.867 1.267.267.133.4.1.533-.067.133-.167.6-.667.767-.9.167-.233.333-.2.567-.133.233.067 1.467.7 1.733.833.267.133.433.2.5.333.067.133.067.767-.167 1.5-.233.733-.7 1.067-.933 1.2-.233.133-.467.2-.733.133-.267-.067-1.067-.4-2.067-1.267-1.067-.867-1.733-1.933-1.933-2.267-.2-.333-.2-.6-.133-.733.067-.133.2-.2.333-.267.133-.067.267-.133.4-.267.133-.133.267-.267.333-.4.067-.133.067-.267.067-.4 0-.133-.067-.267-.133-.4-.067-.133-.633-1.467-.867-2.007-.233-.533-.433-.467-.6-.467-.167 0-.333 0-.533.007-.2.007-.533.133-.8.4-.267.267-1.067 1.2-1.067 3.2 0 2 .933 4 1.733 4.267.267.267 2.933 4.267 7.067 5.333.8.2 1.4.333 1.867.4.867.133 1.533 0 2.067-.133.533-.133 1.733-.8 2-1.6.267-.8.267-1.467.2-1.6-.067-.133-.267-.2-.533-.267-.267-.067-1.6-.8-1.867-.9-.267-.1-.433-.133-.6.133-.167.267-.667.9-.767 1.033-.1.133-.2.2-.333.267-.133.067-.267.067-.4.067-.133 0-.267-.067-.4-.133-.267-.133-1.067-.4-1.867-1.267-.867-.867-1.133-1.6-1.267-1.867-.133-.267-.1-.4.067-.533.167-.133.667-.6.9-.767.233-.167.2-.333.133-.567-.067-.233-.7-1.467-.833-1.733-.133-.267-.2-.433-.333-.5-.133-.067-.767-.067-1.5.167-.733.233-1.067.7-1.2.933-.133.233-.2.467-.133.733.067.267.4 1.067 1.267 2.067.867 1.067 1.933 1.733 2.267 1.933.333.2.6.2.733.133.133-.067.2-.2.267-.333.067-.133.133-.267.267-.4.133-.133.267-.267.4-.333.133-.067.267-.067.4-.067.133 0 .267.067.4.133.267.133 1.067.4 1.867 1.267.867.867 1.133 1.6 1.267 1.867.133.267.1.4-.067.533-.167.133-.667.6-.9.767-.233.167-.2.333-.133.567.067.233.7 1.467.833 1.733.133.267.2.433.333.5.133.067.767.067 1.5-.167.733-.233 1.067-.7 1.2-.933.133-.233.2-.467.133-.733-.067-.267-.4-1.067-1.267-2.067-.867-1.067-1.933-1.733-2.267-1.933-.333-.2-.6-.2-.733-.133-.133.067-.2.2-.267.333-.067.133-.133.267-.267.4-.133.133-.267.267-.4.333-.133.067-.267.067-.4.067z"/></svg>
+            </Button>
             <Button 
               onClick={handleViewDetails}
               variant="outline" 
@@ -389,6 +435,7 @@ export function StudentFeeCard({ student, feeRecords, onPaymentAdded, onCardDele
         />
 
         <StudentPaymentDetails
+          ref={paymentDetailsRef}
           isOpen={isDetailsDialogOpen}
           onOpenChange={setIsDetailsDialogOpen}
           student={student}

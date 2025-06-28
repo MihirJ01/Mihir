@@ -25,6 +25,7 @@ interface Student {
   term_type: string;
   created_at: string;
   profile_photo_url: string;
+  phone?: string;
 }
 
 const BATCH_TIMES = [
@@ -216,7 +217,15 @@ export function StudentManagement() {
     const field = editingField.field;
     let value: any = editValue;
     if (field === "fee_amount") value = parseInt(editValue);
-    await updateItem(editingField.studentId, { [field]: value });
+    const result = await updateItem(editingField.studentId, { [field]: value });
+    if (!result) {
+      toast({
+        title: "Error",
+        description: `Failed to update ${field.replace('_', ' ')}`,
+        variant: "destructive",
+      });
+      return;
+    }
     setEditingField(null);
     refetchStudents();
   };
@@ -744,6 +753,26 @@ export function StudentManagement() {
                         />
                       ) : (
                         <span>Term <span className="font-semibold">{student.term_type}</span></span>
+                      )}
+                    </div>
+                    {/* Phone Number Widget */}
+                    <div
+                      className="bg-cyan-50 rounded-lg px-3 py-1 flex items-center gap-2 shadow-sm cursor-pointer"
+                      onDoubleClick={() => { setEditingField({studentId: student.id, field: 'phone'}); setEditValue(student.phone || ''); }}
+                    >
+                      <span role="img" aria-label="phone" className="text-cyan-400">📞</span>
+                      {editingField?.studentId === student.id && editingField.field === 'phone' ? (
+                        <input
+                          type="tel"
+                          value={editValue}
+                          autoFocus
+                          onChange={e => setEditValue(e.target.value)}
+                          onBlur={saveEdit}
+                          onKeyDown={e => { if (e.key === 'Enter') saveEdit(); }}
+                          className="bg-transparent border-b border-cyan-400 outline-none w-32 text-center animate-pulse"
+                        />
+                      ) : (
+                        <span>Phone <span className="font-semibold">{student.phone || 'N/A'}</span></span>
                       )}
                     </div>
                   </div>

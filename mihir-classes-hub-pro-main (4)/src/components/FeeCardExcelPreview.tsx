@@ -53,7 +53,7 @@ export default function FeeCardExcelPreview({ student, payments, logoUrl }: FeeC
   }
 
   return (
-    <div className="bg-white border-2 border-black rounded-xl p-0 max-w-xl mx-auto shadow-xl overflow-visible" style={{ fontFamily: 'Calibri, Arial, sans-serif', fontSize: 15 }}>
+    <div className="excel-preview bg-white border-2 border-black p-0 py-8 max-w-xl mx-auto shadow-xl overflow-visible" style={{ fontFamily: 'Calibri, Arial, sans-serif', fontSize: 15 }}>
       {/* Header */}
       <div className="flex items-center border-b-2 border-black pb-2 mb-0 px-4 pt-4 bg-white">
         <img src={logoUrl} alt="Logo" className="w-16 h-16 object-contain mr-4" />
@@ -124,12 +124,11 @@ export default function FeeCardExcelPreview({ student, payments, logoUrl }: FeeC
       <div className="text-xs mt-2 px-4">
         <div className="font-bold">Fee Payment Terms</div>
         <ol className="list-decimal ml-5">
-          <li>Payment Methods: Fees can be paid in <span className="font-bold">cash or online</span>.</li>
-          <li>Payment Deadline: <span className="font-bold">the first week of the first month of each term</span>.</li>
-          <li>No deductions will be made for vacations or Hindu festivals.</li>
-          <li className="font-bold">Non-Refundable:</li>
+          <li className="border-b border-black pb-1 mb-1">Payment Methods: Fees can be paid in <span className="font-bold">cash or online</span>.</li>
+          <li className="border-b border-black pb-1 mb-1">Payment Deadline: <span className="font-bold">the first week of the first month of each term</span>.</li>
+          <li className="border-b border-black pb-1 mb-1">No deductions will be made for vacations or Hindu festivals.</li>
+          <li className="font-bold border-b border-black pb-1 mb-1">Non-Refundable: <span className="font-normal">Fees once paid are non-refundable.</span></li>
         </ol>
-        <div className="ml-5">Fees once paid are non-refundable.</div>
       </div>
       <div className="font-bold text-xs mt-2 px-4">Parental Responsibility</div>
       <div className="text-xs px-4">Parents/Guardians are responsible for paying fees on time.</div>
