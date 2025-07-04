@@ -335,40 +335,42 @@ function TermWiseFeeTable({ student, payments }) {
   }
 
   return (
-    <table className="min-w-full text-xs border rounded-xl overflow-hidden">
-      <thead>
-        <tr className="bg-gray-100">
-          <th className="border px-2 py-3">Term</th>
-          <th className="border px-2 py-3">Fee</th>
-          <th className="border px-2 py-3">Paid</th>
-          <th className="border px-2 py-3">Paid Dates</th>
-          <th className="border px-2 py-3">Remaining</th>
-          <th className="border px-2 py-3">Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        {terms.map((term, idx) => (
-          <tr key={term.term} className={idx % 2 === 0 ? 'bg-white' : 'bg-blue-50 hover:bg-blue-100 transition'}>
-            <td className="border px-2 py-3 text-center font-semibold">{term.term}</td>
-            <td className="border px-2 py-3 text-center">₹{term.fee}</td>
-            <td className="border px-2 py-3 text-center">₹{term.paid}</td>
-            <td className="border px-2 py-3 text-center">{term.paidDates || '-'}</td>
-            <td className="border px-2 py-3 text-center">₹{term.remaining}</td>
-            <td className="border px-2 py-3 text-center">
-              <span className={
-                term.status === 'Paid'
-                  ? 'text-green-700 font-bold'
-                  : term.status === 'Partially Paid'
-                  ? 'text-orange-700 font-bold'
-                  : 'text-gray-600 font-bold'
-              }>
-                {term.status}
-              </span>
-            </td>
+    <Card className="p-2 sm:p-4 bg-white/80 shadow border-0 mb-2">
+      <table className="min-w-full text-xs border-2 border-blue-300 rounded-xl overflow-hidden">
+        <thead>
+          <tr className="bg-gray-100">
+            <th className="border px-2 py-3">Term</th>
+            <th className="border px-2 py-3">Fee</th>
+            <th className="border px-2 py-3">Paid</th>
+            <th className="border px-2 py-3">Paid Dates</th>
+            <th className="border px-2 py-3">Remaining</th>
+            <th className="border px-2 py-3">Status</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {terms.map((term, idx) => (
+            <tr key={term.term} className={idx % 2 === 0 ? 'bg-white' : 'bg-blue-50 hover:bg-blue-100 transition'}>
+              <td className="border px-2 py-3 text-center font-semibold">{term.term}</td>
+              <td className="border px-2 py-3 text-center">₹{term.fee}</td>
+              <td className="border px-2 py-3 text-center">₹{term.paid}</td>
+              <td className="border px-2 py-3 text-center">{term.paidDates || '-'}</td>
+              <td className="border px-2 py-3 text-center">₹{term.remaining}</td>
+              <td className="border px-2 py-3 text-center">
+                <span className={
+                  term.status === 'Paid'
+                    ? 'text-green-700 font-bold'
+                    : term.status === 'Partially Paid'
+                    ? 'text-orange-700 font-bold'
+                    : 'text-gray-600 font-bold'
+                }>
+                  {term.status}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </Card>
   );
 }
 

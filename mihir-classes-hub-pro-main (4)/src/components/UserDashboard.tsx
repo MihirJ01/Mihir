@@ -298,7 +298,7 @@ export function UserDashboard() {
                 const remainingAmount = Math.max(0, yearlyFee - totalPaid);
                 return (
                   <FeeCardPreview
-                    student={student}
+              student={student}
                     payments={studentPayments}
                     yearlyFee={yearlyFee}
                     totalPaid={totalPaid}
