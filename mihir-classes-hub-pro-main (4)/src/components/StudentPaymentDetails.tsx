@@ -326,7 +326,7 @@ function TermWiseFeeTable({ student, payments }) {
       return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}/${d.getFullYear()}`;
     }).join(", ");
     // Collect all paid amounts for this term
-    const paidAmounts = termPayments.map(p => `${p.amount_paid}₹`).join(", ");
+    const paidAmounts = termPayments.map(p => `₹${p.amount_paid}`).join(", ");
     terms.push({
       term: i,
       fee: perTermFee,
