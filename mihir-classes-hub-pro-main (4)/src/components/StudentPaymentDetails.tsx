@@ -18,6 +18,7 @@ interface Student {
   board: string;
   fee_amount: number;
   term_type: string;
+  photoUrl?: string;
 }
 
 interface Payment {
@@ -38,12 +39,30 @@ export interface StudentPaymentDetailsRef {
   captureExcelPreview: () => Promise<Blob | null>;
 }
 
+// Add this style block at the top of the file (or in your global CSS if preferred)
+const captureModeStyle = `
+.capture-mode {
+  background: #fff !important;
+  border-radius: 1.5rem !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08) !important;
+  opacity: 1 !important;
+  filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  animation: none !important;
+  text-align: left !important;
+  -webkit-font-smoothing: antialiased !important;
+  font-smoothing: antialiased !important;
+}
+`;
+
 export const StudentPaymentDetails = forwardRef<StudentPaymentDetailsRef, StudentPaymentDetailsProps>(
   ({ isOpen, onOpenChange, student }, ref) => {
     const [payments, setPayments] = useState<Payment[]>([]);
     const [loading, setLoading] = useState(false);
     const { toast } = useToast();
     const previewRef = useRef<HTMLDivElement>(null);
+    const [captureMode, setCaptureMode] = useState(false);
 
     useImperativeHandle(ref, () => ({
       captureExcelPreview: async () => {
@@ -141,68 +160,122 @@ export const StudentPaymentDetails = forwardRef<StudentPaymentDetailsRef, Studen
 
     return (
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-blue-600" />
-              Payment Details - {student.name}
-            </DialogTitle>
-          </DialogHeader>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto flex items-center justify-center min-h-[90vh] flex-col">
+          {/* Payment Details Header at the very top */}
+          <div className="flex items-center justify-center w-full mb-2 mt-2">
+            <DollarSign className="w-6 h-6 text-blue-600 mr-1" />
+            <span className="text-xl font-bold text-gray-900">Payment Details - {student.name}</span>
+          </div>
+
+          <style>{captureModeStyle}</style>
 
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="w-5 h-5 text-green-500" />
-                    <div>
-                      <p className="text-sm text-gray-600">Total Paid</p>
-                      <p className="text-lg font-bold text-green-600">₹{totalPaid.toLocaleString()}</p>
+            {/* Card preview for WhatsApp sharing */}
+            <div ref={previewRef} className="w-full flex justify-center">
+              <Card className={`w-full max-w-lg shadow-2xl border-0 bg-gradient-to-br from-white via-blue-50 to-blue-100/60 rounded-3xl flex-grow mx-auto lg:mx-0 mt-4 lg:mt-0 min-h-[600px]${captureMode ? ' capture-mode' : ''}`}>
+                <div className="w-full relative pt-6 pb-2 flex items-center justify-center">
+                  <div className="absolute left-6 top-1 flex items-center">
+                    {student.photoUrl ? (
+                      <img src={student.photoUrl} alt={student.name} className="w-16 h-16 rounded-xl border-2 border-blue-200 shadow-sm object-cover" />
+                    ) : (
+                      <div className="w-16 h-16 rounded-xl border-2 border-blue-200 shadow-sm bg-blue-200 flex items-center justify-center">
+                        <span className="text-3xl font-bold text-blue-800">
+                          {student.name?.charAt(0).toUpperCase() || '?'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 flex justify-center">
+                    <div className="flex flex-col items-center">
+                      <div className="flex items-center gap-2 justify-center">
+                        <img src='/lovable-uploads/image.png' alt='Logo' className='w-8 h-8' />
+                        <span className="text-3xl font-extrabold tracking-wide text-blue-900 drop-shadow">Mihir Classes</span>
+                      </div>
+                      <div className="h-1 w-32 bg-gradient-to-r from-blue-400 via-blue-600 to-blue-400 rounded-full mt-2 mb-1" />
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2">
-                    <CreditCard className="w-5 h-5 text-blue-500" />
-                    <div>
-                      <p className="text-sm text-gray-600">Yearly Fee</p>
-                      <p className="text-lg font-bold text-blue-600">₹{yearlyFee.toLocaleString()}</p>
+                </div>
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="flex items-center gap-2 text-xl font-bold text-blue-900">
+                        <DollarSign className="w-6 h-6 text-blue-600 flex-shrink-0" />
+                        <span className="truncate bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-semibold flex items-center gap-1">
+                          {student.name}
+                        </span>
+                      </CardTitle>
+                      <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                        Class {student.class} - {student.board}
+                      </p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-orange-500" />
-                    <div>
-                      <p className="text-sm text-gray-600">Remaining</p>
-                      <p className="text-lg font-bold text-orange-600">₹{remainingAmount.toLocaleString()}</p>
+                  <div className="border-b border-blue-200 my-3" />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-gradient-to-br from-blue-100 to-blue-50 p-4 rounded-xl border border-blue-200 flex flex-col items-start shadow-sm">
+                      <div className="flex items-center gap-2 mb-1">
+                        <CreditCard className="w-5 h-5 text-blue-500" />
+                        <span className="text-xs font-semibold text-blue-700">Yearly Fee</span>
+                      </div>
+                      <span className="text-2xl font-extrabold text-blue-900">₹{yearlyFee.toLocaleString()}</span>
                     </div>
+                    <div className="bg-gradient-to-br from-green-100 to-green-50 p-4 rounded-xl border border-green-200 flex flex-col items-start shadow-sm">
+                      <div className="flex items-center gap-2 mb-1">
+                        <DollarSign className="w-5 h-5 text-green-500" />
+                        <span className="text-xs font-semibold text-green-700">Total Paid</span>
+                      </div>
+                      <span className="text-2xl font-extrabold text-green-900">₹{totalPaid.toLocaleString()}</span>
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-br from-orange-100 to-orange-50 p-4 rounded-xl border border-orange-200 flex flex-col items-start shadow-sm">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Calendar className="w-5 h-5 text-orange-500" />
+                      <span className="text-xs font-semibold text-orange-700">Remaining Amount</span>
+                    </div>
+                    <span className="text-2xl font-extrabold text-orange-900">₹{remainingAmount.toLocaleString()}</span>
+                  </div>
+                  <div className="text-xs sm:text-sm text-gray-600">
+                    <p>Term: ₹{student.fee_amount} / {student.term_type}</p>
+                  </div>
+                  <div className="mt-4">
+                    <h4 className="font-semibold mb-2">Term-wise Fee Status</h4>
+                    <TermWiseFeeTable student={student} payments={payments} />
                   </div>
                 </CardContent>
               </Card>
             </div>
-
-            <div className="flex justify-end mb-4">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="gap-2">
-                    <Download className="w-4 h-4" />
-                    Export
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => {/* TODO: Implement PDF export */}}>Export as PDF</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => {/* TODO: Implement Excel export */}}>Export as Excel</DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleExportImage}>Export as Image</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+            {/* WhatsApp Button below card, only if not loading and there is payment data */}
+            {(!loading && payments.length > 0) && (
+              <div className="flex justify-center mt-4">
+                <Button
+                  onClick={async () => {
+                    setCaptureMode(true);
+                    await new Promise(r => setTimeout(r, 500)); // allow DOM to update (increased to 500ms)
+                    if (!previewRef.current) return;
+                    try {
+                      const canvas = await html2canvas(previewRef.current, { backgroundColor: '#fff', scale: 2 });
+                      const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'));
+                      if (!blob) throw new Error('Failed to capture image');
+                      await navigator.clipboard.write([
+                        new window.ClipboardItem({ 'image/png': blob as Blob })
+                      ]);
+                      toast({ title: 'Copied!', description: 'Fee card image copied. Paste it in WhatsApp Web.', variant: 'default' });
+                      window.open('https://web.whatsapp.com/', '_blank');
+                    } catch (err) {
+                      toast({ title: 'Error', description: 'Failed to copy image to clipboard', variant: 'destructive' });
+                    } finally {
+                      setCaptureMode(false);
+                    }
+                  }}
+                  style={{ backgroundColor: '#25D366', color: 'white', border: 'none' }}
+                  className="gap-2 font-semibold rounded-lg shadow px-6 py-2 text-base"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 32 32" fill="currentColor"><path d="M16.001 3.2c-7.067 0-12.8 5.733-12.8 12.8 0 2.267.6 4.467 1.733 6.4l-1.867 6.933 7.067-1.867c1.867 1.067 4 1.6 6.133 1.6h.001c7.067 0 12.8-5.733 12.8-12.8s-5.733-12.8-12.8-12.8zm6.933 19.467c-.267.8-1.467 1.467-2 1.6-.533.133-1.2.267-2.067.133-.467-.067-1.067-.2-1.867-.4-4.133-1.067-6.8-5.067-7.067-5.333-.2-.267-1.733-2.267-1.733-4.267 0-2 .8-2.933 1.067-3.2.267-.267.6-.4.8-.4.2 0 .4 0 .533.007.167.007.4.027.6.467.233.533.8 1.867.867 2.007.067.133.133.267.067.4-.067.133-.1.2-.2.333-.1.133-.2.233-.267.333-.133.2-.267.4-.133.667.133.267.6 1.067 1.267 1.733.867.867 1.6 1.133 1.867 1.267.267.133.4.1.533-.067.133-.167.6-.667.767-.9.167-.233.333-.2.567-.133.233.067 1.467.7 1.733.833.267.133.433.2.5.333.067.133.067.767-.167 1.5-.233.733-.7 1.067-.933 1.2-.233.133-.467.2-.733.133-.267-.067-1.067-.4-2.067-1.267-1.067-.867-1.733-1.933-1.933-2.267-.2-.333-.2-.6-.133-.733.067-.133.2-.2.333-.267.133-.067.267-.133.4-.267.133-.133.267-.267.333-.4.067-.133.067-.267.067-.4 0-.133-.067-.267-.133-.4-.067-.133-.633-1.467-.867-2.007-.233-.533-.433-.467-.6-.467-.167 0-.333 0-.533.007-.2.007-.533.133-.8.4-.267.267-1.067 1.2-1.067 3.2 0 2 .933 4 1.733 4.267.267.267 2.933 4.267 7.067 5.333.8.2 1.4.333 1.867.4.867.133 1.533 0 2.067-.133.533-.133 1.733-.8 2-1.6.267-.8.267-1.467.2-1.6-.067-.133-.267-.2-.533-.267-.267-.067-1.6-.8-1.867-.9-.267-.1-.433-.133-.6.133-.167.267-.667.9-.767 1.033-.1.133-.2.2-.333.267-.133.067-.267.067-.4.067-.133 0-.267-.067-.4-.133-.267-.133-1.067-.4-1.867-1.267-.867-.867-1.133-1.6-1.267-1.867-.133-.267-.1-.4.067-.533.167-.133.667-.6.9-.767.233-.167.2-.333.133-.567-.067-.233-.7-1.467-.833-1.733-.133-.267-.2-.433-.333-.5-.133-.067-.767-.067-1.5.167-.733.233-1.067.7-1.2.933-.133.233-.2.467-.133.733.067.267.4 1.067 1.267 2.067.867 1.067 1.933 1.733 2.267 1.933.333.2.6.2.733.133.133-.067.2-.2.267-.333.067-.133.133-.267.267-.4.133-.133.267-.267.4-.333.133-.067.267-.067.4-.067.133 0 .267.067.4.133.267.133 1.067.4 1.867 1.267.867.867 1.133 1.6 1.267 1.867.133.267.1.4-.067.533-.167.133-.667.6-.9.767-.233.167-.2.333-.133.567.067.233.7 1.467.833 1.733.133.267.2.433.333.5.133.067.767.067 1.5-.167.733-.233 1.067-.7 1.2-.933.133-.233.2-.467.133-.733-.067-.267-.4-1.067-1.267-2.067-.867-1.067-1.933-1.733-2.267-1.933-.333-.2-.6-.2-.733-.133-.133.067-.2.2-.267.333-.067.133-.133.267-.267.4-.133.133-.267.267-.4.333-.133.067-.267.067-.4.067z"/></svg>
+                  WhatsApp
+                </Button>
+              </div>
+            )}
 
             {loading ? (
               <div className="text-center py-8">Loading payment history...</div>
@@ -211,11 +284,7 @@ export const StudentPaymentDetails = forwardRef<StudentPaymentDetailsRef, Studen
                 No payment records found for this student.
               </div>
             ) : (
-              <>
-                <div ref={previewRef}>
-                  <FeeCardExcelPreview student={student} payments={payments} logoUrl="/lovable-uploads/image.png" />
-                </div>
-              </>
+              <></>
             )}
           </div>
         </DialogContent>
@@ -223,3 +292,78 @@ export const StudentPaymentDetails = forwardRef<StudentPaymentDetailsRef, Studen
     );
   }
 );
+
+// Helper component to render the term-wise fee table
+function TermWiseFeeTable({ student, payments }) {
+  // Calculate number of terms and per-term fee
+  const termDuration = student.term_type === "2 months" ? 2 : student.term_type === "3 months" ? 3 : 4;
+  const numberOfTerms = 12 / termDuration;
+  const perTermFee = student.fee_amount;
+
+  // Group payments by term
+  let left = payments.map(p => Number(p.amount_paid));
+  let paymentIdx = 0;
+  const terms = [];
+  for (let i = 1; i <= numberOfTerms; i++) {
+    let termPaid = 0;
+    let termLeft = perTermFee;
+    let termPayments = [];
+    while (paymentIdx < payments.length && termLeft > 0) {
+      const pay = Math.min(left[paymentIdx], termLeft);
+      if (pay > 0) {
+        termPayments.push({ ...payments[paymentIdx], amount_paid: pay });
+        left[paymentIdx] -= pay;
+        termPaid += pay;
+        termLeft -= pay;
+      }
+      if (left[paymentIdx] <= 0) paymentIdx++;
+    }
+    // Collect all payment dates for this term
+    const paidDates = termPayments.map(p => new Date(p.payment_date).toLocaleDateString()).join(", ");
+    terms.push({
+      term: i,
+      fee: perTermFee,
+      paid: termPaid,
+      remaining: perTermFee - termPaid,
+      status: termPaid >= perTermFee ? 'Paid' : termPaid > 0 ? 'Partially Paid' : 'Pending',
+      paidDates,
+    });
+  }
+
+  return (
+    <table className="min-w-full text-xs border rounded-xl overflow-hidden">
+      <thead>
+        <tr className="bg-gray-100">
+          <th className="border px-2 py-3">Term</th>
+          <th className="border px-2 py-3">Fee</th>
+          <th className="border px-2 py-3">Paid</th>
+          <th className="border px-2 py-3">Remaining</th>
+          <th className="border px-2 py-3">Status</th>
+          <th className="border px-2 py-3">Paid Dates</th>
+        </tr>
+      </thead>
+      <tbody>
+        {terms.map((term, idx) => (
+          <tr key={term.term} className={idx % 2 === 0 ? 'bg-white' : 'bg-blue-50 hover:bg-blue-100 transition'}>
+            <td className="border px-2 py-3 text-center font-semibold">{term.term}</td>
+            <td className="border px-2 py-3 text-center">₹{term.fee}</td>
+            <td className="border px-2 py-3 text-center">₹{term.paid}</td>
+            <td className="border px-2 py-3 text-center">₹{term.remaining}</td>
+            <td className="border px-2 py-3 text-center">
+              <span className={
+                term.status === 'Paid'
+                  ? 'text-green-700 font-bold'
+                  : term.status === 'Partially Paid'
+                  ? 'text-orange-700 font-bold'
+                  : 'text-gray-600 font-bold'
+              }>
+                {term.status}
+              </span>
+            </td>
+            <td className="border px-2 py-3 text-center">{term.paidDates || '-'}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
