@@ -199,7 +199,7 @@ export const StudentPaymentDetails = forwardRef<StudentPaymentDetailsRef, Studen
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <CardTitle className="flex items-center gap-2 text-lg sm:text-xl font-bold text-blue-900">
-                        <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 flex-shrink-0" />
+                        <span className="inline-block w-5 h-5 sm:w-6 sm:h-6 text-blue-600 flex-shrink-0 font-bold align-middle">₹</span>
                         <span className="truncate bg-blue-100 text-blue-800 px-2 sm:px-3 py-1 rounded-full font-semibold flex items-center gap-1 text-sm sm:text-base">
                           {student.name}
                         </span>
@@ -222,7 +222,7 @@ export const StudentPaymentDetails = forwardRef<StudentPaymentDetailsRef, Studen
                     </div>
                     <div className="bg-gradient-to-br from-green-100 to-green-50 p-3 sm:p-4 rounded-xl border border-green-200 flex flex-col items-start shadow-sm">
                       <div className="flex items-center gap-2 mb-1">
-                        <DollarSign className="w-5 h-5 text-green-500" />
+                        <span className="inline-block w-5 h-5 text-green-500 font-bold align-middle">₹</span>
                         <span className="text-xs font-semibold text-green-700">Total Paid</span>
                       </div>
                       <span className="text-xl sm:text-2xl font-extrabold text-green-900">₹{totalPaid.toLocaleString()}</span>
@@ -321,9 +321,12 @@ function TermWiseFeeTable({ student, payments }) {
       if (left[paymentIdx] <= 0) paymentIdx++;
     }
     // Collect all payment dates for this term
-    const paidDates = termPayments.map(p => new Date(p.payment_date).toLocaleDateString()).join(", ");
+    const paidDates = termPayments.map(p => {
+      const d = new Date(p.payment_date);
+      return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+    }).join(", ");
     // Collect all paid amounts for this term
-    const paidAmounts = termPayments.map(p => p.amount_paid).join(", ");
+    const paidAmounts = termPayments.map(p => `${p.amount_paid}₹`).join(", ");
     terms.push({
       term: i,
       fee: perTermFee,
@@ -352,7 +355,7 @@ function TermWiseFeeTable({ student, payments }) {
             <tr key={term.term} className={idx % 2 === 0 ? 'bg-white' : 'bg-blue-50 hover:bg-blue-100 transition'}>
               <td className="border px-2 py-3 text-center font-semibold">{term.term}</td>
               <td className="border px-2 py-3 text-center">₹{term.fee}</td>
-              <td className="border px-2 py-3 text-center">₹{term.paid}</td>
+              <td className="border px-2 py-3 text-center">{term.paid}</td>
               <td className="border px-2 py-3 text-center">{term.paidDates || '-'}</td>
               <td className="border px-2 py-3 text-center">₹{term.remaining}</td>
               <td className="border px-2 py-3 text-center">

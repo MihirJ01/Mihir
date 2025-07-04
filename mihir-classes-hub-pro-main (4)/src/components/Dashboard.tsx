@@ -29,8 +29,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   ).length;
   
   const pendingFees = typedFeeRecords.filter(fee => fee.status === 'pending').length;
-  const totalRevenue = typedFeeRecords.filter(fee => fee.status === 'paid')
-    .reduce((sum, fee) => sum + fee.amount, 0);
+  const totalRevenue = typedFeeRecords.reduce((sum, fee) => sum + (fee.total_paid || 0), 0);
 
   const stats = [
     {

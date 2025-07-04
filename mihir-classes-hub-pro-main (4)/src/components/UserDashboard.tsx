@@ -95,7 +95,7 @@ export function UserDashboard() {
           <div className="flex items-start justify-between gap-1 sm:gap-2">
             <div className="flex-1 min-w-0">
               <CardTitle className="flex items-center gap-1 sm:gap-2 text-base sm:text-lg font-bold text-blue-900">
-                <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0" />
+                <span className="inline-block w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0 font-bold align-middle">₹</span>
                 <span className="truncate bg-blue-100 text-blue-800 px-2 sm:px-3 py-1 rounded-full font-semibold flex items-center gap-1 text-xs sm:text-sm">
                   {student.name}
                 </span>
@@ -118,7 +118,7 @@ export function UserDashboard() {
             </div>
             <div className="bg-gradient-to-br from-green-100 to-green-50 p-2 sm:p-3 rounded-xl border border-green-200 flex flex-col items-start shadow-sm">
               <div className="flex items-center gap-1 mb-1">
-                <DollarSign className="w-4 h-4 text-green-500" />
+                <span className="inline-block w-4 h-4 text-green-500 font-bold align-middle">₹</span>
                 <span className="text-xs font-semibold text-green-700">Total Paid</span>
               </div>
               <span className="text-lg sm:text-xl font-extrabold text-green-900">₹{totalPaid.toLocaleString()}</span>
