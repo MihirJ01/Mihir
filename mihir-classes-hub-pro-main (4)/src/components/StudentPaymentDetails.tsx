@@ -160,7 +160,7 @@ export const StudentPaymentDetails = forwardRef<StudentPaymentDetailsRef, Studen
 
     return (
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto flex items-center justify-center min-h-[90vh] flex-col">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto flex items-center justify-center min-h-[90vh] flex-col py-8 sm:py-12">
           {/* Payment Details Header at the very top */}
           <div className="flex items-center justify-center w-full mb-2 mt-2">
             <DollarSign className="w-6 h-6 text-blue-600 mr-1" />
@@ -172,14 +172,14 @@ export const StudentPaymentDetails = forwardRef<StudentPaymentDetailsRef, Studen
           <div className="space-y-6">
             {/* Card preview for WhatsApp sharing */}
             <div ref={previewRef} className="w-full flex justify-center">
-              <Card className={`w-full max-w-lg shadow-2xl border-0 bg-gradient-to-br from-white via-blue-50 to-blue-100/60 rounded-3xl flex-grow mx-auto lg:mx-0 mt-4 lg:mt-0 min-h-[600px]${captureMode ? ' capture-mode' : ''}`}>
-                <div className="w-full relative pt-6 pb-2 flex items-center justify-center">
-                  <div className="absolute left-6 top-1 flex items-center">
+              <Card className={`w-full max-w-full sm:max-w-lg shadow-2xl border-0 bg-gradient-to-br from-white via-blue-50 to-blue-100/60 rounded-3xl flex-grow mx-auto mt-4 min-h-[600px]${captureMode ? ' capture-mode' : ''} p-2 sm:p-6`}>
+                <div className="w-full relative pt-4 sm:pt-6 pb-2 flex items-center justify-center">
+                  <div className="absolute left-2 sm:left-6 top-1 flex items-center">
                     {student.photoUrl ? (
-                      <img src={student.photoUrl} alt={student.name} className="w-16 h-16 rounded-xl border-2 border-blue-200 shadow-sm object-cover" />
+                      <img src={student.photoUrl} alt={student.name} className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl border-2 border-blue-200 shadow-sm object-cover" />
                     ) : (
-                      <div className="w-16 h-16 rounded-xl border-2 border-blue-200 shadow-sm bg-blue-200 flex items-center justify-center">
-                        <span className="text-3xl font-bold text-blue-800">
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl border-2 border-blue-200 shadow-sm bg-blue-200 flex items-center justify-center">
+                        <span className="text-xl sm:text-3xl font-bold text-blue-800">
                           {student.name?.charAt(0).toUpperCase() || '?'}
                         </span>
                       </div>
@@ -188,19 +188,19 @@ export const StudentPaymentDetails = forwardRef<StudentPaymentDetailsRef, Studen
                   <div className="flex-1 flex justify-center">
                     <div className="flex flex-col items-center">
                       <div className="flex items-center gap-2 justify-center">
-                        <img src='/lovable-uploads/image.png' alt='Logo' className='w-8 h-8' />
-                        <span className="text-3xl font-extrabold tracking-wide text-blue-900 drop-shadow">Mihir Classes</span>
+                        <img src='/lovable-uploads/image.png' alt='Logo' className='w-6 h-6 sm:w-8 sm:h-8' />
+                        <span className="text-2xl sm:text-3xl font-extrabold tracking-wide text-blue-900 drop-shadow">Mihir Classes</span>
                       </div>
-                      <div className="h-1 w-32 bg-gradient-to-r from-blue-400 via-blue-600 to-blue-400 rounded-full mt-2 mb-1" />
+                      <div className="h-1 w-20 sm:w-32 bg-gradient-to-r from-blue-400 via-blue-600 to-blue-400 rounded-full mt-2 mb-1" />
                     </div>
                   </div>
                 </div>
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <CardTitle className="flex items-center gap-2 text-xl font-bold text-blue-900">
-                        <DollarSign className="w-6 h-6 text-blue-600 flex-shrink-0" />
-                        <span className="truncate bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-semibold flex items-center gap-1">
+                      <CardTitle className="flex items-center gap-2 text-lg sm:text-xl font-bold text-blue-900">
+                        <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 flex-shrink-0" />
+                        <span className="truncate bg-blue-100 text-blue-800 px-2 sm:px-3 py-1 rounded-full font-semibold flex items-center gap-1 text-sm sm:text-base">
                           {student.name}
                         </span>
                       </CardTitle>
@@ -212,35 +212,37 @@ export const StudentPaymentDetails = forwardRef<StudentPaymentDetailsRef, Studen
                   <div className="border-b border-blue-200 my-3" />
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-gradient-to-br from-blue-100 to-blue-50 p-4 rounded-xl border border-blue-200 flex flex-col items-start shadow-sm">
+                  <div className="flex flex-col sm:grid sm:grid-cols-2 gap-3">
+                    <div className="bg-gradient-to-br from-blue-100 to-blue-50 p-3 sm:p-4 rounded-xl border border-blue-200 flex flex-col items-start shadow-sm">
                       <div className="flex items-center gap-2 mb-1">
                         <CreditCard className="w-5 h-5 text-blue-500" />
                         <span className="text-xs font-semibold text-blue-700">Yearly Fee</span>
                       </div>
-                      <span className="text-2xl font-extrabold text-blue-900">₹{yearlyFee.toLocaleString()}</span>
+                      <span className="text-xl sm:text-2xl font-extrabold text-blue-900">₹{yearlyFee.toLocaleString()}</span>
                     </div>
-                    <div className="bg-gradient-to-br from-green-100 to-green-50 p-4 rounded-xl border border-green-200 flex flex-col items-start shadow-sm">
+                    <div className="bg-gradient-to-br from-green-100 to-green-50 p-3 sm:p-4 rounded-xl border border-green-200 flex flex-col items-start shadow-sm">
                       <div className="flex items-center gap-2 mb-1">
                         <DollarSign className="w-5 h-5 text-green-500" />
                         <span className="text-xs font-semibold text-green-700">Total Paid</span>
                       </div>
-                      <span className="text-2xl font-extrabold text-green-900">₹{totalPaid.toLocaleString()}</span>
+                      <span className="text-xl sm:text-2xl font-extrabold text-green-900">₹{totalPaid.toLocaleString()}</span>
                     </div>
                   </div>
-                  <div className="bg-gradient-to-br from-orange-100 to-orange-50 p-4 rounded-xl border border-orange-200 flex flex-col items-start shadow-sm">
+                  <div className="bg-gradient-to-br from-orange-100 to-orange-50 p-3 sm:p-4 rounded-xl border border-orange-200 flex flex-col items-start shadow-sm">
                     <div className="flex items-center gap-2 mb-1">
                       <Calendar className="w-5 h-5 text-orange-500" />
                       <span className="text-xs font-semibold text-orange-700">Remaining Amount</span>
                     </div>
-                    <span className="text-2xl font-extrabold text-orange-900">₹{remainingAmount.toLocaleString()}</span>
+                    <span className="text-xl sm:text-2xl font-extrabold text-orange-900">₹{remainingAmount.toLocaleString()}</span>
                   </div>
                   <div className="text-xs sm:text-sm text-gray-600">
                     <p>Term: ₹{student.fee_amount} / {student.term_type}</p>
                   </div>
                   <div className="mt-4">
                     <h4 className="font-semibold mb-2">Term-wise Fee Status</h4>
-                    <TermWiseFeeTable student={student} payments={payments} />
+                    <div className="overflow-x-auto">
+                      <TermWiseFeeTable student={student} payments={payments} />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -320,10 +322,12 @@ function TermWiseFeeTable({ student, payments }) {
     }
     // Collect all payment dates for this term
     const paidDates = termPayments.map(p => new Date(p.payment_date).toLocaleDateString()).join(", ");
+    // Collect all paid amounts for this term
+    const paidAmounts = termPayments.map(p => p.amount_paid).join(", ");
     terms.push({
       term: i,
       fee: perTermFee,
-      paid: termPaid,
+      paid: paidAmounts,
       remaining: perTermFee - termPaid,
       status: termPaid >= perTermFee ? 'Paid' : termPaid > 0 ? 'Partially Paid' : 'Pending',
       paidDates,
@@ -337,9 +341,9 @@ function TermWiseFeeTable({ student, payments }) {
           <th className="border px-2 py-3">Term</th>
           <th className="border px-2 py-3">Fee</th>
           <th className="border px-2 py-3">Paid</th>
+          <th className="border px-2 py-3">Paid Dates</th>
           <th className="border px-2 py-3">Remaining</th>
           <th className="border px-2 py-3">Status</th>
-          <th className="border px-2 py-3">Paid Dates</th>
         </tr>
       </thead>
       <tbody>
@@ -348,6 +352,7 @@ function TermWiseFeeTable({ student, payments }) {
             <td className="border px-2 py-3 text-center font-semibold">{term.term}</td>
             <td className="border px-2 py-3 text-center">₹{term.fee}</td>
             <td className="border px-2 py-3 text-center">₹{term.paid}</td>
+            <td className="border px-2 py-3 text-center">{term.paidDates || '-'}</td>
             <td className="border px-2 py-3 text-center">₹{term.remaining}</td>
             <td className="border px-2 py-3 text-center">
               <span className={
@@ -360,10 +365,11 @@ function TermWiseFeeTable({ student, payments }) {
                 {term.status}
               </span>
             </td>
-            <td className="border px-2 py-3 text-center">{term.paidDates || '-'}</td>
           </tr>
         ))}
       </tbody>
     </table>
   );
 }
+
+export { TermWiseFeeTable };

@@ -172,7 +172,6 @@ export function Memories({ isUserView = false }: { isUserView?: boolean } = {}) 
             <span role="img" aria-label="memories">🎞️</span>
             Memories
           </h2>
-          <p className="text-gray-600 text-sm mt-1">View and manage class memories and albums</p>
         </div>
         {/* Only show controls when no album is open */}
         {!selectedAlbum && (

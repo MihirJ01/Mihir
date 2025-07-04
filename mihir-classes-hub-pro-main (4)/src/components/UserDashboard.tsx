@@ -2,7 +2,7 @@ import { StudentAnalytics } from "./StudentAnalytics";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Announcements } from "./Announcements";
-import { Bell, BookOpen, Video, Sparkles, Star, School, Target, Home } from "lucide-react";
+import { Bell, BookOpen, Video, Sparkles, Star, School, Target, Home, Calendar, DollarSign, CreditCard } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
-import FeeCardExcelPreview from "./FeeCardExcelPreview";
+import { StudentPaymentDetails, TermWiseFeeTable } from './StudentPaymentDetails';
 
 export function UserDashboard() {
   const { user, logout } = useAuth();
@@ -64,6 +64,86 @@ export function UserDashboard() {
       setReadIds(announcements.map((a: any) => a.id));
   }
   }, [showAnnouncements, announcements, setReadIds]);
+
+  // Helper: Render only the fee card (copy the Card JSX from StudentPaymentDetails, but as a FeeCardPreview component)
+  function FeeCardPreview({ student, payments, yearlyFee, totalPaid, remainingAmount }) {
+    return (
+      <Card className="w-full max-w-md shadow-2xl border-0 bg-gradient-to-br from-white via-blue-50 to-blue-100/60 rounded-3xl flex-grow mx-auto mt-4 min-h-[400px] p-2 sm:p-4">
+        <div className="w-full relative pt-2 sm:pt-4 pb-1 flex items-center justify-center">
+          <div className="absolute left-2 sm:left-4 top-1 flex items-center">
+            {student.photoUrl ? (
+              <img src={student.photoUrl} alt={student.name} className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl border-2 border-blue-200 shadow-sm object-cover" />
+            ) : (
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl border-2 border-blue-200 shadow-sm bg-blue-200 flex items-center justify-center">
+                <span className="text-lg sm:text-2xl font-bold text-blue-800">
+                  {student.name?.charAt(0).toUpperCase() || '?'}
+                </span>
+              </div>
+            )}
+          </div>
+          <div className="flex-1 flex justify-center">
+            <div className="flex flex-col items-center">
+              <div className="flex items-center gap-1 sm:gap-2 justify-center">
+                <img src='/lovable-uploads/image.png' alt='Logo' className='w-5 h-5 sm:w-6 sm:h-6' />
+                <span className="text-xl sm:text-2xl font-extrabold tracking-wide text-blue-900 drop-shadow">Mihir Classes</span>
+              </div>
+              <div className="h-1 w-14 sm:w-20 bg-gradient-to-r from-blue-400 via-blue-600 to-blue-400 rounded-full mt-2 mb-1" />
+            </div>
+          </div>
+        </div>
+        <CardHeader className="pb-2">
+          <div className="flex items-start justify-between gap-1 sm:gap-2">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="flex items-center gap-1 sm:gap-2 text-base sm:text-lg font-bold text-blue-900">
+                <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0" />
+                <span className="truncate bg-blue-100 text-blue-800 px-2 sm:px-3 py-1 rounded-full font-semibold flex items-center gap-1 text-xs sm:text-sm">
+                  {student.name}
+                </span>
+              </CardTitle>
+              <p className="text-xs text-gray-600 mt-1">
+                Class {student.class} - {student.board}
+              </p>
+            </div>
+          </div>
+          <div className="border-b border-blue-200 my-2" />
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-col sm:grid sm:grid-cols-2 gap-2">
+            <div className="bg-gradient-to-br from-blue-100 to-blue-50 p-2 sm:p-3 rounded-xl border border-blue-200 flex flex-col items-start shadow-sm">
+              <div className="flex items-center gap-1 mb-1">
+                <CreditCard className="w-4 h-4 text-blue-500" />
+                <span className="text-xs font-semibold text-blue-700">Yearly Fee</span>
+              </div>
+              <span className="text-lg sm:text-xl font-extrabold text-blue-900">₹{yearlyFee.toLocaleString()}</span>
+            </div>
+            <div className="bg-gradient-to-br from-green-100 to-green-50 p-2 sm:p-3 rounded-xl border border-green-200 flex flex-col items-start shadow-sm">
+              <div className="flex items-center gap-1 mb-1">
+                <DollarSign className="w-4 h-4 text-green-500" />
+                <span className="text-xs font-semibold text-green-700">Total Paid</span>
+              </div>
+              <span className="text-lg sm:text-xl font-extrabold text-green-900">₹{totalPaid.toLocaleString()}</span>
+            </div>
+          </div>
+          <div className="bg-gradient-to-br from-orange-100 to-orange-50 p-2 sm:p-3 rounded-xl border border-orange-200 flex flex-col items-start shadow-sm">
+            <div className="flex items-center gap-1 mb-1">
+              <Calendar className="w-4 h-4 text-orange-500" />
+              <span className="text-xs font-semibold text-orange-700">Remaining Amount</span>
+            </div>
+            <span className="text-lg sm:text-xl font-extrabold text-orange-900">₹{remainingAmount.toLocaleString()}</span>
+          </div>
+          <div className="text-xs text-gray-600">
+            <p>Term: ₹{student.fee_amount} / {student.term_type}</p>
+          </div>
+          <div className="mt-2">
+            <h4 className="font-semibold mb-2">Term-wise Fee Status</h4>
+            <div className="overflow-x-auto">
+              <TermWiseFeeTable student={student} payments={payments} />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 relative overflow-x-hidden">
@@ -209,11 +289,24 @@ export function UserDashboard() {
         {!showMemories && !showNotes && !showAnnouncements && student && (
           <div className="mt-8 flex flex-col items-center">
             <h2 className="text-xl font-bold text-blue-900 mb-2">Your Fee Card Preview</h2>
-            <FeeCardExcelPreview
-              student={student}
-              payments={payments.filter((p: any) => p.student_id === student.id)}
-              logoUrl="/lovable-uploads/image.png"
-            />
+            <div className="w-full flex justify-center">
+              {(() => {
+                const studentPayments = payments.filter((p: any) => p.student_id === student.id);
+                const totalPaid = studentPayments.reduce((sum: number, payment: any) => sum + Number(payment.amount_paid), 0);
+                const termDuration = student.term_type === "2 months" ? 2 : student.term_type === "3 months" ? 3 : 4;
+                const yearlyFee = (12 / termDuration) * student.fee_amount;
+                const remainingAmount = Math.max(0, yearlyFee - totalPaid);
+                return (
+                  <FeeCardPreview
+                    student={student}
+                    payments={studentPayments}
+                    yearlyFee={yearlyFee}
+                    totalPaid={totalPaid}
+                    remainingAmount={remainingAmount}
+                  />
+                );
+              })()}
+            </div>
           </div>
         )}
         {showMemories ? (

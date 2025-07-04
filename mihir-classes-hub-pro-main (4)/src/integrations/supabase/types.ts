@@ -419,6 +419,7 @@ export type Database = {
           description: string;
           cover_url: string | null;
           created_at: string;
+          link?: string | null;
         };
         Insert: {
           id?: string;
@@ -426,6 +427,7 @@ export type Database = {
           description?: string;
           cover_url?: string | null;
           created_at?: string;
+          link?: string | null;
         };
         Update: {
           id?: string;
@@ -433,6 +435,7 @@ export type Database = {
           description?: string;
           cover_url?: string | null;
           created_at?: string;
+          link?: string | null;
         };
         Relationships: [];
       },
