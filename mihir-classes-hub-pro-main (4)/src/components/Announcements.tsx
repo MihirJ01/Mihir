@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { exportToExcel } from "@/utils/excelExport";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type AnnouncementsProps = {
   readOnly?: boolean;
@@ -45,6 +46,9 @@ export function Announcements({ readOnly = false }: AnnouncementsProps) {
   const [editAnnouncement, setEditAnnouncement] = useState<any>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteAnnouncementId, setDeleteAnnouncementId] = useState<string | null>(null);
+
+  const isMobile = useIsMobile();
+  const [fabOpen, setFabOpen] = useState(false);
 
   const handleAddAnnouncement = async () => {
     if (!newAnnouncement.title || !newAnnouncement.content || !newAnnouncement.priority) {
@@ -131,6 +135,200 @@ export function Announcements({ readOnly = false }: AnnouncementsProps) {
       default: return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
+
+  if (isMobile) {
+    return (
+      <div className="space-y-4 px-2 relative min-h-screen">
+        {/* Floating FAB for actions */}
+        {!readOnly && (
+          <div className="fixed bottom-6 right-6 z-50">
+            <Button size="icon" className="rounded-full shadow-lg bg-blue-600 hover:bg-blue-700 text-white w-14 h-14 flex items-center justify-center" onClick={() => setFabOpen(v => !v)} aria-label="Open actions menu">
+              <Plus className="w-8 h-8" />
+            </Button>
+            {fabOpen && (
+              <div className="absolute bottom-16 right-0 flex flex-col items-end gap-3 animate-fade-in">
+                <Button onClick={handleExportToExcel} className="bg-white text-blue-700 border border-blue-200 shadow px-4 py-2 rounded-lg flex items-center gap-2">
+                  <Download className="w-5 h-5" /> Export to Excel
+                </Button>
+                <Button onClick={() => setIsAddDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                  <Plus className="w-5 h-5" /> Create Announcement
+                </Button>
+                <Select value={filterPriority} onValueChange={setFilterPriority}>
+                  <SelectTrigger className="w-48 bg-white border border-blue-200 shadow rounded-lg">
+                    <SelectValue placeholder="All Priorities" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Priorities</SelectItem>
+                    <SelectItem value="high">High Priority</SelectItem>
+                    <SelectItem value="medium">Medium Priority</SelectItem>
+                    <SelectItem value="low">Low Priority</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+        )}
+        {/* Add Announcement Dialog (mobile) */}
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Create New Announcement</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                <Input
+                  value={newAnnouncement.title}
+                  onChange={(e) => setNewAnnouncement({...newAnnouncement, title: e.target.value})}
+                  placeholder="Enter announcement title"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
+                <Textarea
+                  value={newAnnouncement.content}
+                  onChange={(e) => setNewAnnouncement({...newAnnouncement, content: e.target.value})}
+                  placeholder="Enter announcement content..."
+                  rows={4}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                <Select onValueChange={(value) => setNewAnnouncement({...newAnnouncement, priority: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low Priority</SelectItem>
+                    <SelectItem value="medium">Medium Priority</SelectItem>
+                    <SelectItem value="high">High Priority</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="isGeneral"
+                    checked={newAnnouncement.is_general}
+                    onChange={(e) => setNewAnnouncement({...newAnnouncement, is_general: e.target.checked})}
+                  className="w-4 h-4 text-blue-600"
+                />
+                <label htmlFor="isGeneral" className="text-sm font-medium text-gray-700">
+                  General announcement (for all students)
+                </label>
+              </div>
+                {!newAnnouncement.is_general && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Target Class</label>
+                      <Select onValueChange={(value) => setNewAnnouncement({...newAnnouncement, target_class: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select class" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[1,2,3,4,5,6,7,8].map(num => (
+                          <SelectItem key={num} value={num.toString()}>Class {num}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Target Board</label>
+                      <Select onValueChange={(value) => setNewAnnouncement({...newAnnouncement, target_board: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select board" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="CBSE">CBSE</SelectItem>
+                        <SelectItem value="State Board">State Board</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+              <Button onClick={handleAddAnnouncement} className="w-full">
+                Create Announcement
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+        {/* Announcements Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+          {filteredAnnouncements.map(announcement => (
+            <Card key={announcement.id} 
+              className="bg-white/90 rounded-2xl shadow-lg border border-blue-100 hover:shadow-2xl transition-all duration-200 transform hover:-translate-y-1 animate-fade-in"
+              draggable={!readOnly}
+              onDragStart={() => !readOnly && setDraggingAnnouncementId(announcement.id)}
+              onDragEnd={() => !readOnly && setDraggingAnnouncementId(null)}
+            >
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="flex items-center gap-2 text-lg font-bold text-blue-900">
+                      <Megaphone className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                      <span className="truncate">{announcement.title}</span>
+                    </CardTitle>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      <span className={`px-2 py-0.5 rounded-lg text-xs font-semibold border ${getPriorityColor(announcement.priority)}`}>{announcement.priority.charAt(0).toUpperCase() + announcement.priority.slice(1)} Priority</span>
+                      {announcement.target_class && <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-lg text-xs font-semibold">Class {announcement.target_class}</span>}
+                      {announcement.target_board && <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-lg text-xs font-semibold">{announcement.target_board}</span>}
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0 flex items-center">
+                    {!readOnly && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="ml-2">
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={async () => { await deleteItem(announcement.id); refetch(); }} className="text-red-600">Delete</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="text-sm text-gray-800 break-words whitespace-pre-line">{announcement.content}</div>
+                <div className="text-xs text-gray-500 mt-2">Created: {announcement.created_date}</div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        {/* Dustbin for drag-to-delete */}
+        {draggingAnnouncementId && (
+          <div
+            className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center transition-all ${dragOverDustbin ? "scale-110" : "scale-100"}`}
+            onDragOver={e => { e.preventDefault(); setDragOverDustbin(true); }}
+            onDragLeave={() => setDragOverDustbin(false)}
+            onDrop={async e => {
+              setDragOverDustbin(false);
+              setDraggingAnnouncementId(null);
+              await deleteItem(draggingAnnouncementId);
+              refetch();
+            }}
+            style={{ pointerEvents: "all" }}
+          >
+            <div className={`bg-white shadow-lg rounded-full p-4 border-2 ${dragOverDustbin ? "border-red-600" : "border-gray-300"}`}>
+              <span role="img" aria-label="delete" className={`text-4xl ${dragOverDustbin ? "text-red-600" : "text-gray-500"}`}>🗑️</span>
+            </div>
+            <span className="mt-2 text-sm font-semibold text-gray-700">Drop here to delete</span>
+          </div>
+        )}
+        {filteredAnnouncements.length === 0 && (
+          <Card>
+            <CardContent className="p-12 text-center">
+              <Megaphone className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Announcements Found</h3>
+              <p className="text-gray-600">Start by creating announcements for your students.</p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6 px-2 sm:px-6">

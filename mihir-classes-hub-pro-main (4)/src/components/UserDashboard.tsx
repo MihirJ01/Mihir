@@ -2,7 +2,7 @@ import { StudentAnalytics } from "./StudentAnalytics";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Announcements } from "./Announcements";
-import { Bell, BookOpen, Video, Sparkles, Star, School, Target, Home, Calendar, DollarSign, CreditCard } from "lucide-react";
+import { Bell, BookOpen, Video, Sparkles, Star, School, Target, Home, Calendar, DollarSign, CreditCard, Plus, Menu } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
@@ -13,6 +13,9 @@ import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { StudentPaymentDetails, TermWiseFeeTable } from './StudentPaymentDetails';
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
 
 export function UserDashboard() {
   const { user, logout } = useAuth();
@@ -64,6 +67,9 @@ export function UserDashboard() {
       setReadIds(announcements.map((a: any) => a.id));
   }
   }, [showAnnouncements, announcements, setReadIds]);
+
+  const isMobile = useIsMobile();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Helper: Render only the fee card (copy the Card JSX from StudentPaymentDetails, but as a FeeCardPreview component)
   function FeeCardPreview({ student, payments, yearlyFee, totalPaid, remainingAmount }) {
@@ -184,43 +190,101 @@ export function UserDashboard() {
       <div className="sticky top-0 z-30 bg-gradient-to-r from-blue-500 to-blue-400 shadow-md border-b border-blue-200 rounded-b-2xl">
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 flex flex-col sm:flex-row justify-between items-center py-2 gap-3 sm:gap-0">
           <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto justify-center sm:justify-start">
-            <Button variant="ghost" size="icon" aria-label="Home" className="rounded-full bg-blue-100 hover:bg-blue-200 shadow-md mr-2" onClick={() => { setShowMemories(false); setShowNotes(false); setShowAnnouncements(false); }}>
-              <Home className="w-6 h-6 text-blue-600" />
-            </Button>
+            {/* Hamburger button for mobile layout, top left in navbar */}
+            {isMobile && (
+              <>
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 z-40">
+                  <Button size="icon" className="rounded-full rounded-l-none shadow-xl bg-blue-600 hover:bg-blue-700 text-white w-14 h-14 flex items-center justify-center m-0" onClick={() => setSidebarOpen(true)} aria-label="Open sidebar menu">
+                    <Menu className="w-8 h-8" />
+                  </Button>
+                </div>
+                {/* Announcements bell button in top right */}
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 z-40">
+                  <Button size="icon" variant="ghost" className="bg-transparent shadow-none text-blue-700 w-14 h-14 flex items-center justify-center m-0 relative hover:bg-transparent focus:bg-transparent active:bg-transparent border-none" onClick={() => { setShowAnnouncements(true); setShowMemories(false); setShowNotes(false); setSidebarOpen(false); }} aria-label="Open announcements">
+                    <span className="relative">
+                      <Bell className="w-8 h-8" />
+                      {unread.length > 0 && (
+                        <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-600 border-2 border-white" />
+                      )}
+                    </span>
+                  </Button>
+                </div>
+              </>
+            )}
+            {/* Only show Home icon in header on desktop/tablet */}
+            {!isMobile && (
+              <Button variant="ghost" size="icon" aria-label="Home" className="rounded-full bg-blue-100 hover:bg-blue-200 shadow-md mr-2" onClick={() => { setShowMemories(false); setShowNotes(false); setShowAnnouncements(false); }}>
+                <Home className="w-6 h-6 text-blue-600" />
+              </Button>
+            )}
             <span className="text-2xl sm:text-3xl mr-1 sm:mr-2">👤</span>
             <div>
               <div className="text-white font-extrabold text-base sm:text-lg md:text-2xl drop-shadow">User Dashboard</div>
               <div className="text-blue-100 font-medium text-xs sm:text-sm -mt-1">Welcome, {student?.name || user?.name}!</div>
             </div>
           </div>
-          <div className="flex gap-3 sm:gap-6 items-center w-full sm:w-auto justify-center sm:justify-end">
-            <div className="flex flex-col items-center">
-              <Button variant="ghost" size="icon" onClick={() => { setShowMemories(true); setShowNotes(false); setShowAnnouncements(false); }} aria-label="Memories" className="rounded-full bg-blue-100 hover:bg-blue-200 shadow-md">
-                <Video className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
-              </Button>
-              <span className="text-[10px] sm:text-xs text-white mt-1">Memories</span>
+          {/* Only show icon grid in header on desktop/tablet */}
+          {!isMobile && (
+            <div className="flex gap-3 sm:gap-6 items-center w-full sm:w-auto justify-center sm:justify-end">
+              <div className="flex flex-col items-center">
+                <Button variant="ghost" size="icon" onClick={() => { setShowMemories(true); setShowNotes(false); setShowAnnouncements(false); }} aria-label="Memories" className="rounded-full bg-blue-100 hover:bg-blue-200 shadow-md">
+                  <Video className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+                </Button>
+                <span className="text-[10px] sm:text-xs text-white mt-1">Memories</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <Button variant="ghost" size="icon" onClick={() => { setShowNotes(true); setShowMemories(false); setShowAnnouncements(false); }} aria-label="Notes" className="rounded-full bg-blue-100 hover:bg-blue-200 shadow-md">
+                  <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+                </Button>
+                <span className="text-[10px] sm:text-xs text-white mt-1">Notes</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <Button variant="ghost" size="icon" onClick={() => { setShowAnnouncements(true); setShowMemories(false); setShowNotes(false); }} aria-label="Announcements" className="rounded-full bg-blue-100 hover:bg-blue-200 shadow-md">
+                  <span className="relative">
+                    <Bell className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+                    {unread.length > 0 && (
+                      <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-600 border-2 border-white" />
+                    )}
+                  </span>
+                </Button>
+                <span className="text-[10px] sm:text-xs text-white mt-1">Announcements</span>
+              </div>
+              <Button onClick={logout} variant="outline" className="rounded-full bg-white/80 hover:bg-blue-50 shadow-md ml-2 sm:ml-4 text-xs sm:text-sm px-2 sm:px-4">Logout</Button>
             </div>
-            <div className="flex flex-col items-center">
-              <Button variant="ghost" size="icon" onClick={() => { setShowNotes(true); setShowMemories(false); setShowAnnouncements(false); }} aria-label="Notes" className="rounded-full bg-blue-100 hover:bg-blue-200 shadow-md">
-                <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
-              </Button>
-              <span className="text-[10px] sm:text-xs text-white mt-1">Notes</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <Button variant="ghost" size="icon" onClick={() => { setShowAnnouncements(true); setShowMemories(false); setShowNotes(false); }} aria-label="Announcements" className="rounded-full bg-blue-100 hover:bg-blue-200 shadow-md">
-                <span className="relative">
-                  <Bell className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
-                  {unread.length > 0 && (
-                    <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-600 border-2 border-white" />
-                  )}
-                </span>
-              </Button>
-              <span className="text-[10px] sm:text-xs text-white mt-1">Announcements</span>
-            </div>
-            <Button onClick={logout} variant="outline" className="rounded-full bg-white/80 hover:bg-blue-50 shadow-md ml-2 sm:ml-4 text-xs sm:text-sm px-2 sm:px-4">Logout</Button>
-          </div>
+          )}
         </div>
       </div>
+      {/* Sidebar logic remains the same */}
+      {isMobile && (
+        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+          <SheetContent side="left" className="p-0 bg-gradient-to-br from-blue-100 via-white to-blue-200 border-0 rounded-r-3xl shadow-2xl w-64 min-h-screen flex flex-col">
+            {/* Sidebar Header */}
+            <div className="flex flex-col items-center justify-center pt-8 pb-4 px-4 bg-gradient-to-r from-blue-200/80 to-blue-100/60 rounded-tr-3xl">
+              <Avatar className="h-16 w-16 border-4 border-blue-300 shadow-lg mb-2">
+                {profilePhotoUrl ? (
+                  <AvatarImage src={profilePhotoUrl} alt="Profile Photo" />
+                ) : (
+                  <AvatarFallback>
+                    <span className="text-3xl">👤</span>
+                  </AvatarFallback>
+                )}
+              </Avatar>
+              <div className="font-bold text-blue-900 text-lg text-center truncate w-full">{student?.name || user?.name}</div>
+              <div className="text-xs text-blue-700 font-medium mt-1 text-center">Class {student?.class || user?.class} • {student?.board || user?.board}</div>
+            </div>
+            <div className="flex-1 flex flex-col gap-2 items-center justify-center py-8">
+              <SidebarActionBtn icon={<Home className="w-7 h-7" />} label="Home" onClick={() => { setShowMemories(false); setShowNotes(false); setShowAnnouncements(false); setSidebarOpen(false); }} badge={false} />
+              <SidebarActionBtn icon={<Video className="w-6 h-6" />} label="Memories" onClick={() => { setShowMemories(true); setShowNotes(false); setShowAnnouncements(false); setSidebarOpen(false); }} badge={false} />
+              <SidebarActionBtn icon={<BookOpen className="w-6 h-6" />} label="Notes" onClick={() => { setShowNotes(true); setShowMemories(false); setShowAnnouncements(false); setSidebarOpen(false); }} badge={false} />
+              <SidebarActionBtn icon={<Bell className="w-6 h-6" />} label="Announcements" badge={unread.length > 0} onClick={() => { setShowAnnouncements(true); setShowMemories(false); setShowNotes(false); setSidebarOpen(false); }} />
+            </div>
+            <div className="px-6"><Separator /></div>
+            <div className="flex flex-col items-center py-6">
+              <Button onClick={logout} variant="outline" className="rounded-full bg-white/90 hover:bg-blue-50 shadow text-blue-700 font-semibold w-full">Logout</Button>
+            </div>
+          </SheetContent>
+        </Sheet>
+      )}
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
         {!showMemories && !showNotes && !showAnnouncements && (
           <div className="flex flex-col lg:flex-row justify-center items-stretch gap-4 sm:gap-8 mt-6 sm:mt-10 animate-float">
@@ -347,5 +411,22 @@ export function UserDashboard() {
         )}
       </div>
     </div>
+  );
+}
+
+function SidebarActionBtn({ icon, label, onClick, badge = false }) {
+  return (
+    <button
+      className="flex flex-col items-center justify-center gap-1 px-4 py-2 rounded-xl hover:bg-blue-200/60 transition relative w-20 focus:outline-none"
+      onClick={onClick}
+    >
+      <span className="relative">
+        {icon}
+        {badge && (
+          <span className="absolute -top-1 -right-1 block h-2 w-2 rounded-full bg-red-600 border-2 border-white" />
+        )}
+      </span>
+      <span className="text-xs font-medium text-blue-900 mt-1">{label}</span>
+    </button>
   );
 }

@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 
 const Footer = () => {
@@ -54,7 +53,7 @@ const Footer = () => {
         <div className="border-t border-gray-700 pt-8 flex flex-col md:flex-row justify-between items-center">
           <p className="text-gray-400">© 2024 MihirClasses. All rights reserved.</p>
           <p className="text-gray-400 mt-2 md:mt-0">
-            Made with ❤️ for students worldwide
+            Made with ❤️ for students
           </p>
         </div>
       </div>

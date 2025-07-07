@@ -29,11 +29,6 @@ export function useSupabaseData<T extends TableName>(
       
       if (error) {
         console.error(`Error fetching ${tableName}:`, error);
-        toast({
-          title: "Error",
-          description: `Failed to load ${tableName}`,
-          variant: "destructive",
-        });
         return;
       }
       
@@ -123,11 +118,6 @@ export function useSupabaseData<T extends TableName>(
 
       if (error) {
         console.error(`Error adding to ${tableName}:`, error);
-        toast({
-          title: "Error",
-          description: `Failed to add item to ${tableName}`,
-          variant: "destructive",
-        });
         return null;
       }
 
@@ -156,11 +146,6 @@ export function useSupabaseData<T extends TableName>(
 
       if (error) {
         console.error(`Error updating ${tableName}:`, error);
-        toast({
-          title: "Error",
-          description: `Failed to update item in ${tableName}`,
-          variant: "destructive",
-        });
         return null;
       }
 
@@ -185,11 +170,6 @@ export function useSupabaseData<T extends TableName>(
 
       if (error) {
         console.error(`Error deleting from ${tableName}:`, error);
-        toast({
-          title: "Error",
-          description: `Failed to delete item from ${tableName}`,
-          variant: "destructive",
-        });
         return false;
       }
 

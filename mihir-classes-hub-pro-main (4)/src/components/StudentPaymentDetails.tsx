@@ -215,7 +215,7 @@ export const StudentPaymentDetails = forwardRef<StudentPaymentDetailsRef, Studen
                   <div className="flex flex-col sm:grid sm:grid-cols-2 gap-3">
                     <div className="bg-gradient-to-br from-blue-100 to-blue-50 p-3 sm:p-4 rounded-xl border border-blue-200 flex flex-col items-start shadow-sm">
                       <div className="flex items-center gap-2 mb-1">
-                        <CreditCard className="w-5 h-5 text-blue-500" />
+                    <CreditCard className="w-5 h-5 text-blue-500" />
                         <span className="text-xs font-semibold text-blue-700">Yearly Fee</span>
                       </div>
                       <span className="text-xl sm:text-2xl font-extrabold text-blue-900">₹{yearlyFee.toLocaleString()}</span>
@@ -230,7 +230,7 @@ export const StudentPaymentDetails = forwardRef<StudentPaymentDetailsRef, Studen
                   </div>
                   <div className="bg-gradient-to-br from-orange-100 to-orange-50 p-3 sm:p-4 rounded-xl border border-orange-200 flex flex-col items-start shadow-sm">
                     <div className="flex items-center gap-2 mb-1">
-                      <Calendar className="w-5 h-5 text-orange-500" />
+                    <Calendar className="w-5 h-5 text-orange-500" />
                       <span className="text-xs font-semibold text-orange-700">Remaining Amount</span>
                     </div>
                     <span className="text-xl sm:text-2xl font-extrabold text-orange-900">₹{remainingAmount.toLocaleString()}</span>
@@ -275,8 +275,8 @@ export const StudentPaymentDetails = forwardRef<StudentPaymentDetailsRef, Studen
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 32 32" fill="currentColor"><path d="M16.001 3.2c-7.067 0-12.8 5.733-12.8 12.8 0 2.267.6 4.467 1.733 6.4l-1.867 6.933 7.067-1.867c1.867 1.067 4 1.6 6.133 1.6h.001c7.067 0 12.8-5.733 12.8-12.8s-5.733-12.8-12.8-12.8zm6.933 19.467c-.267.8-1.467 1.467-2 1.6-.533.133-1.2.267-2.067.133-.467-.067-1.067-.2-1.867-.4-4.133-1.067-6.8-5.067-7.067-5.333-.2-.267-1.733-2.267-1.733-4.267 0-2 .8-2.933 1.067-3.2.267-.267.6-.4.8-.4.2 0 .4 0 .533.007.167.007.4.027.6.467.233.533.8 1.867.867 2.007.067.133.133.267.067.4-.067.133-.1.2-.2.333-.1.133-.2.233-.267.333-.133.2-.267.4-.133.667.133.267.6 1.067 1.267 1.733.867.867 1.6 1.133 1.867 1.267.267.133.4.1.533-.067.133-.167.6-.667.767-.9.167-.233.333-.2.567-.133.233.067 1.467.7 1.733.833.267.133.433.2.5.333.067.133.067.767-.167 1.5-.233.733-.7 1.067-.933 1.2-.233.133-.467.2-.733.133-.267-.067-1.067-.4-2.067-1.267-1.067-.867-1.733-1.933-1.933-2.267-.2-.333-.2-.6-.133-.733.067-.133.2-.2.333-.267.133-.067.267-.133.4-.267.133-.133.267-.267.333-.4.067-.133.067-.267.067-.4 0-.133-.067-.267-.133-.4-.067-.133-.633-1.467-.867-2.007-.233-.533-.433-.467-.6-.467-.167 0-.333 0-.533.007-.2.007-.533.133-.8.4-.267.267-1.067 1.2-1.067 3.2 0 2 .933 4 1.733 4.267.267.267 2.933 4.267 7.067 5.333.8.2 1.4.333 1.867.4.867.133 1.533 0 2.067-.133.533-.133 1.733-.8 2-1.6.267-.8.267-1.467.2-1.6-.067-.133-.267-.2-.533-.267-.267-.067-1.6-.8-1.867-.9-.267-.1-.433-.133-.6.133-.167.267-.667.9-.767 1.033-.1.133-.2.2-.333.267-.133.067-.267.067-.4.067-.133 0-.267-.067-.4-.133-.267-.133-1.067-.4-1.867-1.267-.867-.867-1.133-1.6-1.267-1.867-.133-.267-.1-.4.067-.533.167-.133.667-.6.9-.767.233-.167.2-.333.133-.567-.067-.233-.7-1.467-.833-1.733-.133-.267-.2-.433-.333-.5-.133-.067-.767-.067-1.5.167-.733.233-1.067.7-1.2.933-.133.233-.2.467-.133.733.067.267.4 1.067 1.267 2.067.867 1.067 1.933 1.733 2.267 1.933.333.2.6.2.733.133.133-.067.2-.2.267-.333.067-.133.133-.267.267-.4.133-.133.267-.267.4-.333.133-.067.267-.067.4-.067.133 0 .267.067.4.133.267.133 1.067.4 1.867 1.267.867.867 1.133 1.6 1.267 1.867.133.267.1.4-.067.533-.167.133-.667.6-.9.767-.233.167-.2.333-.133.567.067.233.7 1.467.833 1.733.133.267.2.433.333.5.133.067.767.067 1.5-.167.733-.233 1.067-.7 1.2-.933.133-.233.2-.467.133-.733-.067-.267-.4-1.067-1.267-2.067-.867-1.067-1.933-1.733-2.267-1.933-.333-.2-.6-.2-.733-.133-.133.067-.2.2-.267.333-.067.133-.133.267-.267.4-.133.133-.267.267-.4.333-.133.067-.267.067-.4.067z"/></svg>
                   WhatsApp
-                </Button>
-              </div>
+                  </Button>
+            </div>
             )}
 
             {loading ? (
@@ -338,27 +338,27 @@ function TermWiseFeeTable({ student, payments }) {
   }
 
   return (
-    <Card className="p-2 sm:p-4 bg-white/80 shadow border-0 mb-2">
-      <table className="min-w-full text-xs border-2 border-blue-300 rounded-xl overflow-hidden">
+    <Card className="p-2 sm:p-3 bg-white/80 shadow border-0 mb-2 w-full max-w-4xl mx-auto">
+      <table className="min-w-full text-[11px] border-2 border-blue-300 rounded-xl overflow-hidden">
         <thead>
           <tr className="bg-gray-100">
-            <th className="border px-2 py-3">Term</th>
-            <th className="border px-2 py-3">Fee</th>
-            <th className="border px-2 py-3">Paid</th>
-            <th className="border px-2 py-3">Paid Dates</th>
-            <th className="border px-2 py-3">Remaining</th>
-            <th className="border px-2 py-3">Status</th>
+            <th className="border px-1 py-2">Term</th>
+            <th className="border px-1 py-2">Fee</th>
+            <th className="border px-1 py-2">Paid</th>
+            <th className="border px-1 py-2">Paid Dates</th>
+            <th className="border px-1 py-2">Remaining</th>
+            <th className="border px-1 py-2">Status</th>
           </tr>
         </thead>
         <tbody>
           {terms.map((term, idx) => (
             <tr key={term.term} className={idx % 2 === 0 ? 'bg-white' : 'bg-blue-50 hover:bg-blue-100 transition'}>
-              <td className="border px-2 py-3 text-center font-semibold">{term.term}</td>
-              <td className="border px-2 py-3 text-center">₹{term.fee}</td>
-              <td className="border px-2 py-3 text-center">{term.paid}</td>
-              <td className="border px-2 py-3 text-center">{term.paidDates || '-'}</td>
-              <td className="border px-2 py-3 text-center">₹{term.remaining}</td>
-              <td className="border px-2 py-3 text-center">
+              <td className="border px-1 py-2 text-center font-semibold">{term.term}</td>
+              <td className="border px-1 py-2 text-center">₹{term.fee}</td>
+              <td className="border px-1 py-2 text-center">{term.paid}</td>
+              <td className="border px-1 py-2 text-center">{term.paidDates || '-'}</td>
+              <td className="border px-1 py-2 text-center">₹{term.remaining}</td>
+              <td className="border px-1 py-2 text-center">
                 <span className={
                   term.status === 'Paid'
                     ? 'text-green-700 font-bold'

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Mihir Classes</string>
+    <string name="title_activity_main">Mihir Classes</string>
+    <string name="package_name">com.mihir.app</string>
+    <string name="custom_url_scheme">com.mihir.app</string>
+</resources>

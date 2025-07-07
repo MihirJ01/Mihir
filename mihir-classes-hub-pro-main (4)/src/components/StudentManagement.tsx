@@ -7,11 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
-import { Plus, Users, Download, Search, MoreVertical, Edit, Trash2 } from "lucide-react";
+import { Plus, Users, Download, Search, MoreVertical, Edit, Trash2, Menu } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { exportToExcel } from "@/utils/excelExport";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { StudentPaymentDetails } from "./StudentPaymentDetails";
 
 interface Student {
   id: string;
@@ -51,6 +53,10 @@ export function StudentManagement() {
   const [dragOverDustbin, setDragOverDustbin] = useState(false);
   const [editingField, setEditingField] = useState<{studentId: string, field: string} | null>(null);
   const [editValue, setEditValue] = useState("");
+  const isMobile = useIsMobile();
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [fabOpen, setFabOpen] = useState(false);
 
   const students = studentsData as Student[];
 
@@ -238,12 +244,246 @@ export function StudentManagement() {
     );
   }
 
+  // MOBILE LAYOUT: simple card grid (no header section)
+  if (isMobile) {
+  return (
+      <div className="p-4 relative min-h-screen">
+        <div className="mb-4">
+          <div className="relative w-full max-w-xs mx-auto">
+            <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-blue-400" />
+            <Input
+              placeholder="Search students..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 w-full rounded-xl bg-white/70 border border-blue-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 shadow-sm transition-all placeholder:text-blue-400 text-blue-900"
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          {filteredStudents.map(student => (
+            <div
+              key={student.id}
+              className="bg-white rounded-2xl shadow flex flex-col items-center justify-center p-4 cursor-pointer hover:shadow-lg transition border border-blue-100"
+              onClick={() => { setSelectedStudent(student); setDetailsOpen(true); }}
+            >
+              {student.profile_photo_url ? (
+                <img
+                  src={student.profile_photo_url}
+                  alt={student.name}
+                  className="w-16 h-16 rounded-full object-cover border-2 border-blue-200 mb-2"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-blue-200 flex items-center justify-center text-2xl font-bold text-blue-800 mb-2">
+                  {student.name?.charAt(0).toUpperCase() || '?'}
+                </div>
+              )}
+              <div className="text-base font-semibold text-blue-900 text-center truncate w-full">{student.name}</div>
+            </div>
+          ))}
+        </div>
+        {selectedStudent && (
+          <StudentDetailsMobileCard
+            student={selectedStudent}
+            open={detailsOpen}
+            onOpenChange={open => { setDetailsOpen(open); if (!open) setSelectedStudent(null); }}
+          />
+        )}
+        {/* Floating Hamburger FAB */}
+        <div className="fixed bottom-6 right-6 z-50">
+          <Button size="icon" className="rounded-full shadow-lg bg-blue-600 hover:bg-blue-700 text-white w-14 h-14 flex items-center justify-center" onClick={() => setFabOpen(v => !v)} aria-label="Open actions menu">
+            <Plus className="w-8 h-8" />
+          </Button>
+          {fabOpen && (
+            <div className="absolute bottom-16 right-0 flex flex-col items-end gap-3 animate-fade-in">
+              <Button onClick={handleExportToExcel} className="bg-white text-blue-700 border border-blue-200 shadow px-4 py-2 rounded-lg flex items-center gap-2">
+                <Download className="w-5 h-5" /> Export to Excel
+              </Button>
+              <Button onClick={() => setIsAddDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                <Plus className="w-5 h-5" /> Add Student
+              </Button>
+            </div>
+          )}
+        </div>
+        {/* Add Student Dialog (mobile) */}
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Add New Student</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="name">Student Name *</Label>
+                <Input
+                  id="name"
+                  value={newStudent.name}
+                  onChange={(e) => setNewStudent({...newStudent, name: e.target.value})}
+                  placeholder="Enter student name"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="username">Username *</Label>
+                <Input
+                  id="username"
+                  value={newStudent.username}
+                  onChange={(e) => setNewStudent({...newStudent, username: e.target.value})}
+                  placeholder="Enter username for login"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="password">Password *</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={newStudent.password}
+                  onChange={(e) => setNewStudent({...newStudent, password: e.target.value})}
+                  placeholder="Enter password for login"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="class">Class *</Label>
+                <Select onValueChange={(value) => setNewStudent({...newStudent, class: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select class" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1,2,3,4,5,6,7,8,9].map(num => (
+                      <SelectItem key={num} value={num.toString()}>Class {num}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="board">Board</Label>
+                <Select
+                  value={newStudent.board}
+                  onValueChange={val => handleBoardChange(val)}
+                >
+                  <SelectTrigger id="board">
+                    <SelectValue placeholder="Select board" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="CBSE">CBSE</SelectItem>
+                    <SelectItem value="State Board">State Board</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="batchTime">Batch Time *</Label>
+                <Select onValueChange={(value) => setNewStudent({...newStudent, batch_time: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select batch time" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BATCH_TIMES.map(batch => (
+                      <SelectItem key={batch} value={batch}>{batch}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="feeAmount">Fee Amount (₹) *</Label>
+                <Input
+                  id="feeAmount"
+                  type="number"
+                  value={newStudent.fee_amount}
+                  onChange={(e) => setNewStudent({...newStudent, fee_amount: e.target.value})}
+                  placeholder="Enter fee amount"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="term_type">Term Type</Label>
+                <Select
+                  value={newStudent.term_type}
+                  onValueChange={val => setNewStudent({ ...newStudent, term_type: val })}
+                >
+                  <SelectTrigger id="term_type">
+                    <SelectValue placeholder="Select term type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="3 months">3 months</SelectItem>
+                    <SelectItem value="4 months">4 months</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Profile Photo Upload */}
+              <div>
+                <Label>Profile Photo (optional)</Label>
+                <div
+                  className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-4 cursor-pointer hover:bg-gray-50"
+                  onDragOver={e => e.preventDefault()}
+                  onDrop={async e => {
+                    e.preventDefault();
+                    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                      setProfilePhoto(e.dataTransfer.files[0]);
+                      const url = await uploadProfilePhoto(e.dataTransfer.files[0]);
+                      setProfilePhotoUrl(url);
+                    }
+                  }}
+                >
+                  <div className="relative">
+                    <Avatar className="h-20 w-20 mb-2">
+                      {profilePhotoUrl ? (
+                        <AvatarImage src={profilePhotoUrl} alt="Profile Photo" />
+                      ) : (
+                        <AvatarFallback>
+                          <span className="text-3xl">👤</span>
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+                    {profilePhotoUrl && (
+                      <button
+                        type="button"
+                        className="absolute top-0 right-0 bg-white rounded-full p-1 shadow hover:bg-gray-100"
+                        onClick={() => {
+                          setProfilePhoto(null);
+                          setProfilePhotoUrl("");
+                        }}
+                        aria-label="Remove photo"
+                      >
+                        <Trash2 className="w-5 h-5 text-red-500" />
+                      </button>
+                    )}
+                  </div>
+                  {uploading && <span className="text-xs text-blue-600">Uploading...</span>}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    id="profile-photo-input"
+                    onChange={async e => {
+                      if (e.target.files && e.target.files[0]) {
+                        setProfilePhoto(e.target.files[0]);
+                        const url = await uploadProfilePhoto(e.target.files[0]);
+                        setProfilePhotoUrl(url);
+                      }
+                    }}
+                  />
+                  <label htmlFor="profile-photo-input" className="cursor-pointer text-blue-600 underline mt-1">Choose file</label>
+                </div>
+              </div>
+
+              <Button onClick={handleAddStudent} className="w-full">
+                Add Student
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4 sm:space-y-6 px-2 sm:px-6">
-      {/* Enhanced Header */}
-
-
-      {/* Enhanced Section Header */}
+      {/* Enhanced Header (desktop/tablet only) */}
+      {!isMobile && (
       <section className="bg-blue-50 rounded-xl px-6 py-4 mb-6 shadow-sm border border-blue-100">
         <h2 className="text-2xl font-bold text-blue-900 flex items-center gap-2">
           <span role="img" aria-label="students">🧑‍🎓</span>
@@ -251,6 +491,7 @@ export function StudentManagement() {
         </h2>
         <p className="text-gray-600 text-sm mt-1">Manage student information and enrollment</p>
       </section>
+      )}
 
       <div className="flex justify-end items-center">
         <div className="flex gap-3">
@@ -817,5 +1058,48 @@ export function StudentManagement() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function StudentDetailsMobileCard({ student, open, onOpenChange }: { student: Student, open: boolean, onOpenChange: (open: boolean) => void }) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-xs p-0 rounded-3xl overflow-hidden border-0 shadow-2xl bg-gradient-to-br from-blue-50 to-blue-100">
+        <div className="flex flex-col items-center p-6">
+          {/* Board badge */}
+          <span className={`absolute top-6 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-bold shadow ${student.board === 'CBSE' ? 'bg-blue-500 text-white' : 'bg-green-500 text-white'}`}>{student.board}</span>
+          {/* Avatar */}
+          {student.profile_photo_url ? (
+            <img
+              src={student.profile_photo_url}
+              alt={student.name}
+              className="w-20 h-20 rounded-full object-cover border-2 border-blue-200 mt-8 mb-2"
+            />
+          ) : (
+            <div className="w-20 h-20 rounded-full bg-blue-200 flex items-center justify-center text-3xl font-bold text-blue-800 mt-8 mb-2">
+              {student.name?.charAt(0).toUpperCase() || '?'}
+            </div>
+          )}
+          {/* Name */}
+          <div className="text-xl font-bold text-blue-900 mt-2 mb-4 text-center">{student.name}</div>
+          {/* Info widgets */}
+          <div className="flex flex-col gap-2 items-start w-full">
+            <div className="flex gap-2">
+              <div className="inline-flex bg-blue-100 rounded-lg px-2 py-1 items-center gap-1 text-blue-900 text-sm self-start"><span className="mr-1">🏫</span>Class <span className="font-bold ml-1">{student.class}</span></div>
+              <div className="inline-flex bg-green-100 rounded-lg px-2 py-1 items-center gap-1 text-green-900 text-sm self-start"><span className="mr-1">🏷️</span>Board <span className="font-bold ml-1">{student.board}</span></div>
+            </div>
+            <div className="inline-flex bg-pink-100 rounded-lg px-2 py-1 items-center gap-1 text-pink-900 text-sm self-start"><span className="mr-1">⏰</span>Batch <span className="font-bold ml-1">{student.batch_time}</span></div>
+            <div className="inline-flex bg-purple-100 rounded-lg px-2 py-1 items-center gap-1 text-purple-900 text-sm self-start"><span className="mr-1">👤</span>Username <span className="font-bold ml-1">{student.username}</span></div>
+            <div className="inline-flex bg-yellow-100 rounded-lg px-2 py-1 items-center gap-1 text-yellow-900 text-sm self-start"><span className="mr-1">💰</span>Fee per Term <span className="font-bold ml-1 text-green-700">₹{student.fee_amount}</span></div>
+            <div className="inline-flex bg-orange-100 rounded-lg px-2 py-1 items-center gap-1 text-orange-900 text-sm self-start"><span className="mr-1">📅</span>Term <span className="font-bold ml-1">{student.term_type}</span></div>
+            <div className="inline-flex bg-cyan-100 rounded-lg px-2 py-1 items-center gap-1 text-cyan-900 text-sm self-start"><span className="mr-1">📞</span>Phone <span className="font-bold ml-1">{student.phone || 'N/A'}</span></div>
+          </div>
+          <div className="flex gap-4 mt-6 w-full justify-center">
+            <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded shadow">Edit</Button>
+            <Button size="sm" variant="destructive" className="px-6 py-2 rounded shadow">Delete</Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

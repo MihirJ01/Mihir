@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Capacitor } from '@capacitor/core';
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const isNative = Capacitor.isNativePlatform();
 
   const scrollToContact = () => {
     const contactSection = document.getElementById('contact-us');
@@ -36,6 +38,15 @@ const Navigation = () => {
             <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={scrollToContact}>
               About
             </Button>
+            {!isNative && (
+              <a
+                href="/path/to/app.apk"
+                className="ml-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow text-sm transition"
+                download
+              >
+                Download App
+              </a>
+            )}
           </div>
 
           <div className="md:hidden">
@@ -59,6 +70,15 @@ const Navigation = () => {
                 <Button size="sm" className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={scrollToContact}>
                   About
                 </Button>
+                {!isNative && (
+                  <a
+                    href="/path/to/app.apk"
+                    className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow text-sm transition text-center"
+                    download
+                  >
+                    Download App
+                  </a>
+                )}
               </div>
             </div>
           </div>

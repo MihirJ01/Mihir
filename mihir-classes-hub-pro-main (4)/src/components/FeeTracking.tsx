@@ -11,6 +11,7 @@ import { StudentFeeCard } from "./StudentFeeCard";
 import { useFeeCalculations } from "@/hooks/useFeeCalculations";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Student {
   id: string;
@@ -52,6 +53,8 @@ export function FeeTracking() {
   const [selectedBatch, setSelectedBatch] = useState<string>("all");
   const [showPending, setShowPending] = useState(false);
   const [showCollected, setShowCollected] = useState(false);
+  const isMobile = useIsMobile();
+  const [fabOpen, setFabOpen] = useState(false);
 
   const students = studentsData as Student[];
   const fees = feeRecordsData as FeeRecord[];
@@ -184,6 +187,190 @@ export function FeeTracking() {
       toast({ title: 'Error', description: 'Failed to reset pending amounts', variant: 'destructive' });
     }
   };
+
+  if (isMobile) {
+    return (
+      <div className="space-y-4 p-2 relative min-h-screen">
+        {/* Stat Cards and Fee Cards remain as usual */}
+        {/* Floating FAB for actions */}
+        <div className="fixed bottom-6 right-6 z-50">
+          <Button size="icon" className="rounded-full shadow-lg bg-blue-600 hover:bg-blue-700 text-white w-14 h-14 flex items-center justify-center" onClick={() => setFabOpen(v => !v)} aria-label="Open actions menu">
+            <Plus className="w-8 h-8" />
+          </Button>
+          {fabOpen && (
+            <div className="absolute bottom-16 right-0 flex flex-col items-end gap-3 animate-fade-in">
+              <Button onClick={handleExportToExcel} className="bg-white text-blue-700 border border-blue-200 shadow px-4 py-2 rounded-lg flex items-center gap-2">
+                <Download className="w-5 h-5" /> Export to Excel
+              </Button>
+              <Button onClick={() => setIsAddDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                <Plus className="w-5 h-5" /> Add Fee Record
+              </Button>
+              <Select value={selectedBatch} onValueChange={setSelectedBatch}>
+                <SelectTrigger className="w-48 bg-white border border-blue-200 shadow rounded-lg">
+                  <SelectValue placeholder="Filter by Batch" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Batches</SelectItem>
+                  {batchOptions.map(batch => (
+                    <SelectItem key={batch} value={batch}>{batch}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
+        {/* Add Fee Record Dialog (mobile) */}
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Fee Record</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Select Student</label>
+                <Select value={selectedStudent} onValueChange={setSelectedStudent}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a student" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {students.map(student => (
+                      <SelectItem key={student.id} value={student.id}>
+                        {student.name} - Class {student.class} (₹{student.fee_amount}/{student.term_type})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button onClick={handleAddFeeRecord} className="w-full">
+                Add Fee Record
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+        {/* Stat Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+          <Card className="bg-gradient-to-br from-white via-green-50 to-green-100/60 rounded-2xl shadow-md border-0 transition-transform hover:scale-105 hover:shadow-xl">
+            <CardContent className="p-4 sm:p-6 flex items-center gap-4">
+              <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-green-100 shadow-inner">
+                <DollarSign className="w-10 h-10 text-green-500" />
+                </div>
+              <div className="flex items-center gap-2">
+                <div>
+                  <p className="text-base font-semibold text-green-700">Total Collected</p>
+                  <p className="text-3xl font-extrabold text-green-600">
+                    {showCollected ? `₹${totalPaid.toLocaleString()}` : '₹xxxxxxxx'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  aria-label={showCollected ? 'Hide total collected' : 'Show total collected'}
+                  className="ml-2 p-1 rounded hover:bg-green-200 transition"
+                  onClick={() => setShowCollected(v => !v)}
+                >
+                  {showCollected ? <EyeOff className="w-6 h-6 text-green-500" /> : <Eye className="w-6 h-6 text-green-500" />}
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-gradient-to-br from-white via-orange-50 to-orange-100/60 rounded-2xl shadow-md border-0 transition-transform hover:scale-105 hover:shadow-xl">
+            <CardContent className="p-4 sm:p-6 flex items-center gap-4">
+              <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-orange-100 shadow-inner">
+                <CreditCard className="w-10 h-10 text-orange-500" />
+                </div>
+              <div className="flex items-center gap-2">
+                <div>
+                  <p className="text-base font-semibold text-orange-700">Pending Amount</p>
+                  <p className="text-3xl font-extrabold text-orange-600">
+                    {showPending ? `₹${totalPending.toLocaleString()}` : '₹xxxxxxxx'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  aria-label={showPending ? 'Hide pending amount' : 'Show pending amount'}
+                  className="ml-2 p-1 rounded hover:bg-orange-200 transition"
+                  onClick={() => setShowPending(v => !v)}
+                >
+                  {showPending ? <EyeOff className="w-6 h-6 text-orange-500" /> : <Eye className="w-6 h-6 text-orange-500" />}
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-gradient-to-br from-white via-red-50 to-red-100/60 rounded-2xl shadow-md border-0 transition-transform hover:scale-105 hover:shadow-xl">
+            <CardContent className="p-4 sm:p-6 flex items-center gap-4">
+              <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-red-100 shadow-inner">
+                <AlertCircle className="w-10 h-10 text-red-500" />
+                </div>
+              <div>
+                <p className="text-base font-semibold text-red-700">Overdue Payments</p>
+                <p className="text-3xl font-extrabold text-red-600">{overdueCount}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        {/* Student Fee Cards Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+              <Users className="w-5 h-5" />
+              Student Fee Cards
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 sm:p-6">
+            {fees.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                No fee records found. Add fee records to get started.
+              </div>
+            )}
+            
+            {/* Responsive Grid for Fee Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+              {students.map((student) => {
+                const studentFeeRecords = fees.filter(fee => fee.student_id === student.id);
+                if (studentFeeRecords.length === 0) return null;
+                if (selectedBatch !== "all" && student.batch_time !== selectedBatch) return null;
+                return (
+                  <StudentFeeCard
+                    key={student.id}
+                    student={student}
+                    feeRecords={studentFeeRecords}
+                    onPaymentAdded={handlePaymentAdded}
+                    onCardDeleted={handleCardDeleted}
+                    draggable={true}
+                    onDragStart={(id) => setDraggingCardId(id)}
+                    onDragEnd={() => setDraggingCardId(null)}
+                  />
+                );
+              })}
+            </div>
+            {/* Dustbin for drag-to-delete */}
+            {draggingCardId && (
+              <div
+                className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center transition-all ${dragOverDustbin ? "scale-110" : "scale-100"}`}
+                onDragOver={e => { e.preventDefault(); setDragOverDustbin(true); }}
+                onDragLeave={() => setDragOverDustbin(false)}
+                onDrop={async e => {
+                  setDragOverDustbin(false);
+                  setDraggingCardId(null);
+                  // Delete the fee record for this card
+                  const fee = fees.find(f => f.student_id === draggingCardId);
+                  if (fee) {
+                    await deleteItem(fee.id);
+                    handleCardDeleted();
+                  }
+                }}
+                style={{ pointerEvents: "all" }}
+              >
+                <div className={`bg-white shadow-lg rounded-full p-4 border-2 ${dragOverDustbin ? "border-red-600" : "border-gray-300"}`}>
+                  <Trash2 className={`w-10 h-10 ${dragOverDustbin ? "text-red-600" : "text-gray-500"}`} />
+                </div>
+                <span className="mt-2 text-sm font-semibold text-gray-700">Drop here to delete</span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6 p-2 sm:p-6">

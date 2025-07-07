@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function Memories({ isUserView = false }: { isUserView?: boolean } = {}) {
   const { isAdmin, user } = useAuth();
@@ -64,6 +65,8 @@ export function Memories({ isUserView = false }: { isUserView?: boolean } = {}) 
   const [reelIndex, setReelIndex] = useState<number>(0);
   const reelVideos = videos;
   const reelModalRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
+  const [fabOpen, setFabOpen] = useState(false);
 
   // Upload file to Supabase Storage
   const uploadFile = async (file: File, bucket: string) => {
@@ -163,6 +166,379 @@ export function Memories({ isUserView = false }: { isUserView?: boolean } = {}) 
     return () => window.removeEventListener('keydown', handler);
   }, [reelModalOpen, reelVideos.length]);
 
+  if (isMobile) {
+    return (
+      <div className="space-y-4 px-2 relative min-h-screen">
+        {/* Floating FAB for actions */}
+        {!isUserView && isAdmin && !selectedAlbum && (
+          <div className="fixed bottom-6 right-6 z-50">
+            <Button size="icon" className="rounded-full shadow-lg bg-blue-600 hover:bg-blue-700 text-white w-14 h-14 flex items-center justify-center" onClick={() => setFabOpen(v => !v)} aria-label="Open actions menu">
+              <Upload className="w-8 h-8" />
+            </Button>
+            {fabOpen && (
+              <div className="absolute bottom-16 right-0 flex flex-col items-end gap-3 animate-fade-in">
+                <Button variant={selectMode ? "secondary" : "outline"} onClick={() => { setSelectMode(v => !v); setSelectedAlbums([]); }} className="gap-2">
+                  {selectMode ? "Cancel Selection" : "Select Multiple"}
+                </Button>
+                <Button onClick={() => setShowCreateAlbum(true)} variant="outline" className="gap-2">
+                  <Upload className="w-5 h-5" /> Create Album
+                </Button>
+                <Select value={sortedYears[0] || ''} onValueChange={() => {}}>
+                  <SelectTrigger className="w-48 bg-white border border-blue-200 shadow rounded-lg">
+                    <SelectValue placeholder="All Years" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Years</SelectItem>
+                    {sortedYears.map(year => (
+                      <SelectItem key={year} value={year}>{year}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+        )}
+        {/* Create Album Dialog (mobile) */}
+        <Dialog open={showCreateAlbum} onOpenChange={setShowCreateAlbum}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Create Album</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Album Name</Label>
+                <Input value={albumForm.name} onChange={e => setAlbumForm(f => ({ ...f, name: e.target.value }))} placeholder="Album name" />
+              </div>
+              <div>
+                <Label>Description</Label>
+                <Input value={albumForm.description} onChange={e => setAlbumForm(f => ({ ...f, description: e.target.value }))} placeholder="Description (optional)" />
+              </div>
+              <div>
+                <Label>Cover Image/Video (optional)</Label>
+                <Input type="file" accept="image/*,video/*" onChange={async e => {
+                  if (e.target.files && e.target.files[0]) {
+                    setAlbumForm(f => ({ ...f, cover: e.target.files![0] }));
+                    const url = await uploadFile(e.target.files[0], "videos");
+                    setCoverUrl(url);
+                  }
+                }} />
+              </div>
+              <Button onClick={handleCreateAlbum} disabled={creatingAlbum || !albumForm.name} className="w-full">
+                {creatingAlbum ? "Creating..." : "Create Album"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+        {/* Album List and Dustbin remain as usual */}
+        {!selectedAlbum && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+            {albums.map((album: any) => (
+              <Card
+                key={album.id}
+                className={`hover:shadow-lg transition-shadow cursor-pointer relative group overflow-hidden p-0 ${selectMode && "ring-2 ring-blue-400"}`}
+                onClick={() => {
+                  if (selectMode) {
+                    handleSelectAlbum(album.id);
+                  } else if (album.link) {
+                    window.open(album.link, '_blank');
+                  }
+                }}
+                draggable={!isUserView && isAdmin}
+                onDragStart={e => {
+                  if (!isUserView && isAdmin) {
+                    setDraggingAlbumId(album.id);
+                    e.dataTransfer.effectAllowed = "move";
+                  }
+                }}
+                onDragEnd={() => setDraggingAlbumId(null)}
+              >
+                {/* Select tick for multi-select mode */}
+                {selectMode && (
+                  <button
+                    className={`absolute top-2 right-2 z-20 bg-white rounded-full p-1 border-2 ${selectedAlbums.includes(album.id) ? "border-blue-600" : "border-gray-300"}`}
+                    onClick={e => { e.stopPropagation(); handleSelectAlbum(album.id); }}
+                    aria-label={selectedAlbums.includes(album.id) ? "Deselect Album" : "Select Album"}
+                  >
+                    {selectedAlbums.includes(album.id) ? (
+                      <CheckCircle className="w-5 h-5 text-blue-600" />
+                    ) : (
+                      <div className="w-5 h-5 border-2 border-gray-300 rounded-full" />
+                    )}
+                  </button>
+                )}
+                {/* Three-dot menu for admin (hide in select mode) */}
+                {!selectMode && !isUserView && isAdmin && (
+                  <div className="absolute top-2 right-2 z-10" onClick={e => e.stopPropagation()}>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 p-0"><MoreVertical className="w-5 h-5" /></Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => {
+                          setEditingAlbum(album);
+                          setEditAlbumForm({ name: album.name, description: album.description, cover: null, link: album.link || "" });
+                          setEditCoverUrl(album.cover_url || "");
+                          setShowEditAlbum(true);
+                        }}>
+                          Edit Album
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-red-600" onClick={e => {
+                          e.stopPropagation();
+                          setEditingAlbum(album);
+                          setShowDeleteConfirm(true);
+                        }}>
+                          Delete Album
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                )}
+                {/* Album preview fills card */}
+                <div className="relative w-full h-40 md:h-48 lg:h-56 overflow-hidden">
+                  {album.cover_url ? (
+                    album.cover_url.match(/\.(mp4|webm|ogg)$/i) ? (
+                      <video src={album.cover_url} className="w-full h-full object-cover transition duration-300 group-hover:blur-sm" />
+                    ) : (
+                      <img src={album.cover_url} alt="cover" className="w-full h-full object-cover transition duration-300 group-hover:blur-sm" />
+                    )
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-blue-100">
+                      <Video className="w-12 h-12 text-blue-400" />
+                    </div>
+                  )}
+                  {/* Overlay on hover */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4 text-center">
+                    <div className="text-lg font-bold text-white mb-1 truncate w-full">{album.name}</div>
+                    <div className="text-sm text-gray-200 line-clamp-2 w-full">{album.description}</div>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+        {/* Edit Album Dialog */}
+        {!isUserView && (
+          <Dialog open={showEditAlbum} onOpenChange={setShowEditAlbum}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Edit Album</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label>Album Name</Label>
+                  <Input value={editAlbumForm.name} onChange={e => setEditAlbumForm(f => ({ ...f, name: e.target.value }))} placeholder="Album name" />
+                </div>
+                <div>
+                  <Label>Description</Label>
+                  <Input value={editAlbumForm.description} onChange={e => setEditAlbumForm(f => ({ ...f, description: e.target.value }))} placeholder="Description (optional)" />
+                </div>
+                <div>
+                  <Label>Google Photos Link</Label>
+                  <Input
+                    value={editAlbumForm.link || ""}
+                    onChange={e => setEditAlbumForm(f => ({ ...f, link: e.target.value }))}
+                    placeholder="Paste Google Photos link here"
+                  />
+                </div>
+                <div>
+                  <Label>Cover Image/Video (optional)</Label>
+                  <Input type="file" accept="image/*,video/*" onChange={async e => {
+                    if (e.target.files && e.target.files[0]) {
+                      setEditAlbumForm(f => ({ ...f, cover: e.target.files![0] }));
+                      const url = await uploadFile(e.target.files[0], "videos");
+                      setEditCoverUrl(url);
+                    }
+                  }} />
+                  {editCoverUrl && (
+                    editCoverUrl.match(/\.(mp4|webm|ogg)$/i) ? (
+                      <video src={editCoverUrl} className="w-16 h-10 object-cover rounded mt-2" />
+                    ) : (
+                      <img src={editCoverUrl} alt="cover" className="w-16 h-10 object-cover rounded mt-2" />
+                    )
+                  )}
+                </div>
+                <Button
+                  onClick={async () => {
+                    if (!editingAlbum) return;
+                    let cover_url = editCoverUrl;
+                    if (editAlbumForm.cover) cover_url = await uploadFile(editAlbumForm.cover, "videos");
+                    await updateAlbum(editingAlbum.id, {
+                      name: editAlbumForm.name,
+                      description: editAlbumForm.description,
+                      cover_url,
+                      link: editAlbumForm.link,
+                    });
+                    setShowEditAlbum(false);
+                    if (typeof refetch === 'function') refetch();
+                  }}
+                  disabled={!editAlbumForm.name}
+                  className="w-full"
+                >
+                  Update Album
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+        {/* Delete Album Confirmation Dialog */}
+        {showDeleteConfirm && editingAlbum && (
+          <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Delete Album</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <p>Are you sure you want to delete the album <span className="font-semibold">{editingAlbum.name}</span>? This will remove all its media as well.</p>
+                <div className="flex gap-2 justify-end">
+                  <Button variant="outline" onClick={() => setShowDeleteConfirm(false)} disabled={deletingAlbum}>Cancel</Button>
+                  <Button variant="destructive" onClick={async () => {
+                    setDeletingAlbum(true);
+                    await deleteAlbum(editingAlbum.id);
+                    setShowDeleteConfirm(false);
+                    setEditingAlbum(null);
+                    setDeletingAlbum(false);
+                  }} disabled={deletingAlbum}>
+                    {deletingAlbum ? "Deleting..." : "Delete"}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+        {/* Album Detail View */}
+        {selectedAlbum && currentAlbum && (
+          <div>
+            <div className="mb-4 flex items-center gap-4">
+              <Button variant="outline" onClick={closeAlbum}>← Back to Albums</Button>
+              <h3 className="text-xl font-semibold flex items-center gap-2">
+                {currentAlbum.cover_url ? (
+                  currentAlbum.cover_url.match(/\.(mp4|webm|ogg)$/i) ? (
+                    <video src={currentAlbum.cover_url} className="w-10 h-7 object-cover rounded" />
+                  ) : (
+                    <img src={currentAlbum.cover_url} alt="cover" className="w-10 h-7 object-cover rounded" />
+                  )
+                ) : (
+                  <Video className="w-6 h-6 text-blue-400" />
+                )}
+                {currentAlbum.name}
+              </h3>
+              {!isUserView && isAdmin && (
+                <Button onClick={() => setShowAddMedia(true)} variant="outline" className="ml-4">Add Image / Video</Button>
+              )}
+            </div>
+            {/* Masonry layout for album media */}
+            <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
+              {currentMedia.map((media: any) => (
+                <div
+                  key={media.id}
+                  className="break-inside-avoid mb-4 relative group rounded-lg overflow-hidden shadow hover:shadow-lg transition-all bg-white"
+                  style={media.type === 'video' ? { aspectRatio: '9/16', maxWidth: 360, margin: '0 auto' } : {}}
+                  onDoubleClick={() => {
+                    if (media.type === 'video') {
+                      handleLike(media.id);
+                      setHeartAnims((prev) => ({ ...prev, [media.id]: true }));
+                      setTimeout(() => setHeartAnims((prev) => ({ ...prev, [media.id]: false })), 900);
+                    }
+                  }}
+                >
+                  {media.type === 'image' ? (
+                    <img src={media.url} alt={media.title || ''} className="w-full h-auto object-cover rounded-t" />
+                  ) : (
+                    <div className="relative w-full h-full flex items-center justify-center bg-black">
+                      <video src={media.url} controls className="w-full h-full object-contain" preload="metadata" style={{ aspectRatio: '9/16', maxHeight: 480 }} />
+                      {/* Heart animation overlay */}
+                      <span
+                        className={`pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-red-500 opacity-0 transition-all duration-300 ${heartAnims[media.id] ? 'opacity-100 scale-150' : 'scale-75'}`}
+                        style={{ fontSize: 96, zIndex: 10 }}
+                      >
+                        ❤️
+                      </span>
+                    </div>
+                  )}
+                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition">
+                    {!isUserView && isAdmin && (
+                      <Button size="icon" variant="destructive" onClick={() => deleteAlbumMedia(media.id)}>
+                        ×
+                      </Button>
+                    )}
+                  </div>
+                  {media.title && (
+                    <div className="text-xs text-gray-700 mt-1 px-2 truncate pb-2 pt-1 bg-white/80 backdrop-blur-sm">{media.title}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+            {/* Add Media to Album (admin only, floating panel) */}
+            {!isUserView && (
+              <Dialog open={showAddMedia} onOpenChange={setShowAddMedia}>
+                <DialogContent className="max-w-xl">
+                  <DialogHeader>
+                    <DialogTitle>Add Media to Album</DialogTitle>
+                  </DialogHeader>
+                  <CardContent className="space-y-4">
+                    <AddMediaToAlbum albumId={selectedAlbum} addAlbumMedia={addAlbumMedia} />
+                  </CardContent>
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
+        )}
+        {/* Bulk Delete Albums Confirmation Dialog */}
+        {showBulkDeleteConfirm && selectedAlbums.length > 0 && (
+          <Dialog open={showBulkDeleteConfirm} onOpenChange={setShowBulkDeleteConfirm}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Delete Albums</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <p>Are you sure you want to delete <span className="font-semibold">{selectedAlbums.length}</span> selected album(s)? This will remove all their media as well.</p>
+                <div className="flex gap-2 justify-end">
+                  <Button variant="outline" onClick={() => setShowBulkDeleteConfirm(false)} disabled={bulkDeleting}>Cancel</Button>
+                  <Button variant="destructive" onClick={async () => {
+                    setBulkDeleting(true);
+                    for (const id of selectedAlbums) {
+                      await deleteAlbum(id);
+                    }
+                    setBulkDeleting(false);
+                    setShowBulkDeleteConfirm(false);
+                    setSelectMode(false);
+                    setSelectedAlbums([]);
+                  }} disabled={bulkDeleting}>
+                    {bulkDeleting ? "Deleting..." : "Delete"}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+        {/* Dustbin for drag-to-delete */}
+        {!isUserView && isAdmin && draggingAlbumId && (
+          <div
+            className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center transition-all ${dragOverDustbin ? "scale-110" : "scale-100"}`}
+            onDragOver={e => { e.preventDefault(); setDragOverDustbin(true); }}
+            onDragLeave={() => setDragOverDustbin(false)}
+            onDrop={e => {
+              setDragOverDustbin(false);
+              setDraggingAlbumId(null);
+              // If in select mode and album is selected, delete all selected, else just the dragged one
+              if (selectMode && selectedAlbums.length > 0 && selectedAlbums.includes(draggingAlbumId)) {
+                setShowBulkDeleteConfirm(true);
+              } else {
+                setEditingAlbum(albums.find(a => a.id === draggingAlbumId));
+                setShowDeleteConfirm(true);
+              }
+            }}
+            style={{ pointerEvents: "all" }}
+          >
+            <div className={`bg-white shadow-lg rounded-full p-4 border-2 ${dragOverDustbin ? "border-red-600" : "border-gray-300"}`}>
+              <Trash2 className={`w-10 h-10 ${dragOverDustbin ? "text-red-600" : "text-gray-500"}`} />
+            </div>
+            <span className="mt-2 text-sm font-semibold text-gray-700">Drop here to delete</span>
+          </div>
+        )}
+      </div>
+    );
+  }
   return (
     <div className="space-y-4 sm:space-y-6 px-2 sm:px-6">
       {/* Enhanced Section Header */}
@@ -544,144 +920,6 @@ export function Memories({ isUserView = false }: { isUserView?: boolean } = {}) 
             </Dialog>
           )}
         </div>
-      )}
-      {/* Render general (non-album) videos as a grid */}
-      {!selectedAlbum && (
-        <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {reelVideos.map((video: any, idx: number) => (
-              <div
-                key={video.id}
-                className="relative cursor-pointer group aspect-[9/16] bg-black rounded-xl overflow-hidden shadow hover:scale-105 transition-transform"
-                onClick={() => { setReelIndex(idx); setReelModalOpen(true); }}
-              >
-                {/* Admin three-dot menu */}
-                {!isUserView && isAdmin && (
-                  <div className="absolute top-2 right-2 z-10" onClick={e => e.stopPropagation()}>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 p-0"><MoreVertical className="w-5 h-5 text-white" /></Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem className="text-red-600" onClick={() => deleteAlbumMedia(video.id)}>
-                          Delete Reel
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                )}
-                <video
-                  src={video.video_url}
-                  muted
-                  loop
-                  playsInline
-                  preload="metadata"
-                  poster={video.thumbnail_url || undefined}
-                  className="w-full h-full object-cover"
-                  style={{ aspectRatio: '9/16', maxHeight: 320 }}
-                />
-                <div className="absolute bottom-2 left-2 text-white text-xs bg-black/60 rounded px-2 py-1 flex items-center gap-2">
-                  <span className="font-semibold">{video.title}</span>
-                  <span className="ml-2 flex items-center"><ThumbsUp className="w-3 h-3 mr-1" />{likes.filter((like: any) => like.video_id === video.id).length}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-          {/* Reel Modal */}
-          {reelModalOpen && reelVideos[reelIndex] && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95">
-              {/* Close button */}
-              <div className="absolute top-4 right-4 z-10">
-                <Button variant="ghost" size="icon" onClick={() => setReelModalOpen(false)}><X className="w-7 h-7 text-white" /></Button>
-              </div>
-              {/* Scrollable reels container */}
-              <div
-                className="relative w-full h-full flex flex-col items-center justify-center overflow-y-auto snap-y snap-mandatory scrollbar-hide"
-                style={{ scrollSnapType: 'y mandatory', WebkitOverflowScrolling: 'touch', msOverflowStyle: 'none', scrollbarWidth: 'none' }}
-                onScroll={e => {
-                  const container = e.currentTarget;
-                  const children = Array.from(container.children).filter(child => child.classList.contains('reel-snap'));
-                  const scrollTop = container.scrollTop;
-                  let closestIdx = 0;
-                  let minDist = Infinity;
-                  children.forEach((child, idx) => {
-                    const dist = Math.abs((child as HTMLElement).offsetTop - scrollTop);
-                    if (dist < minDist) {
-                      minDist = dist;
-                      closestIdx = idx;
-                    }
-                  });
-                  if (closestIdx !== reelIndex) setReelIndex(closestIdx);
-                }}
-              >
-                {reelVideos.map((video: any, idx: number) => (
-                  <div
-                    key={video.id}
-                    className="reel-snap snap-center flex flex-col items-center justify-center min-h-screen w-full relative"
-                    style={{ aspectRatio: '9/16', maxWidth: 420, margin: '0 auto' }}
-                  >
-                    <div className="relative w-full h-full flex items-center justify-center bg-black" style={{ aspectRatio: '9/16', maxHeight: '90vh' }}>
-                      <video
-                        src={video.video_url}
-                        controls
-                        autoPlay={idx === reelIndex}
-                        muted
-                        playsInline
-                        className="w-full h-full object-contain rounded-xl bg-black"
-                        style={{ aspectRatio: '9/16', maxHeight: '90vh' }}
-                        ref={el => {
-                          if (el) idx === reelIndex ? el.play() : el.pause();
-                        }}
-                        onDoubleClick={() => {
-                          handleLike(video.id);
-                          setHeartAnims((prev) => ({ ...prev, [video.id]: true }));
-                          setTimeout(() => setHeartAnims((prev) => ({ ...prev, [video.id]: false })), 900);
-                        }}
-                      />
-                      {/* Heart animation overlay */}
-                      <span
-                        className={`pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-red-500 opacity-0 transition-all duration-300 ${heartAnims[video.id] ? 'opacity-100 scale-150' : 'scale-75'}`}
-                        style={{ fontSize: 96, zIndex: 10 }}
-                      >
-                        ❤️
-                      </span>
-                      {/* Overlay UI: right side */}
-                      <div className="absolute right-4 bottom-24 flex flex-col items-center gap-4 z-10">
-                        <Button variant="ghost" size="icon" onClick={() => handleLike(video.id)}>
-                          <ThumbsUp className={`w-7 h-7 ${likes.some((like: any) => like.video_id === video.id && like.user_id === user?.name) ? 'text-red-500' : 'text-white'}`} />
-                        </Button>
-                        <span className="text-white font-semibold text-lg">{likes.filter((like: any) => like.video_id === video.id).length}</span>
-                        {/* Admin three-dot menu */}
-                        {!isUserView && isAdmin && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 p-0"><MoreVertical className="w-6 h-6 text-white" /></Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem className="text-red-600" onClick={() => deleteAlbumMedia(video.id)}>
-                                Delete Reel
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        )}
-                      </div>
-                      {/* Overlay UI: bottom left */}
-                      <div className="absolute bottom-8 left-4 z-10 flex flex-col gap-2">
-                        <div className="bg-black/60 text-white rounded-full px-4 py-1 text-base font-semibold flex items-center gap-2">
-                          <span>{video.title}</span>
-                        </div>
-                        <div className="bg-black/60 text-white rounded px-2 py-1 text-xs">{video.uploaded_by}</div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {videos.length === 0 && (
-            <div className="text-gray-500 text-center mt-12">No memories uploaded yet.</div>
-          )}
-        </>
       )}
       {/* Bulk Delete Albums Confirmation Dialog */}
       {showBulkDeleteConfirm && selectedAlbums.length > 0 && (

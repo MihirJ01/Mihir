@@ -104,26 +104,39 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-        {stats.map((stat, index) => (
-          <Card
-            key={index}
-            className="transition-transform duration-200 hover:scale-105 hover:shadow-2xl border-0 bg-gradient-to-br from-white via-blue-50 to-blue-100/60 shadow-lg rounded-2xl min-w-0"
-          >
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 lg:p-6">
-              <CardTitle className="text-xs sm:text-sm font-semibold text-gray-700 tracking-wide">
-                {stat.title}
-              </CardTitle>
-              <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl shadow-md flex items-center justify-center ${stat.color} bg-opacity-90 bg-blur-[2px]`}>
-                <stat.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white drop-shadow-lg" />
-              </div>
-            </CardHeader>
-            <CardContent className="p-3 sm:p-4 lg:p-6 pt-0">
-              <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-900 tracking-tight">
-                {stat.value}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        {stats.map((stat, index) => {
+          // Determine navigation target for each stat
+          let navTarget = null;
+          if (stat.title === 'Total Students') navTarget = 'students';
+          if (stat.title === 'Present Today') navTarget = 'attendance';
+          if (stat.title === 'Pending Fees' || stat.title === 'Total Revenue') navTarget = 'fee-tracking';
+          return (
+            <Card
+              key={index}
+              className={
+                `transition-transform duration-200 hover:scale-105 hover:shadow-2xl border-0 bg-gradient-to-br from-white via-blue-50 to-blue-100/60 shadow-lg rounded-2xl min-w-0 cursor-pointer ${navTarget ? 'hover:ring-2 hover:ring-blue-400' : ''}`
+              }
+              onClick={() => navTarget && onNavigate && onNavigate(navTarget)}
+              tabIndex={navTarget ? 0 : -1}
+              role={navTarget ? 'button' : undefined}
+              aria-label={navTarget ? `Go to ${navTarget}` : undefined}
+            >
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 lg:p-6">
+                <CardTitle className="text-xs sm:text-sm font-semibold text-gray-700 tracking-wide">
+                  {stat.title}
+                </CardTitle>
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl shadow-md flex items-center justify-center ${stat.color} bg-opacity-90 bg-blur-[2px]`}>
+                  <stat.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white drop-shadow-lg" />
+                </div>
+              </CardHeader>
+              <CardContent className="p-3 sm:p-4 lg:p-6 pt-0">
+                <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-900 tracking-tight">
+                  {stat.value}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
@@ -154,47 +167,6 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                   Fee collection system operational
                 </span>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl shadow-md border-0 bg-gradient-to-br from-white via-blue-50 to-blue-100/60 backdrop-blur">
-          <CardHeader className="p-3 sm:p-4 lg:p-6 border-b border-blue-100">
-            <CardTitle className="text-base sm:text-lg font-bold text-blue-900 tracking-tight flex items-center gap-2">
-              <span role="img" aria-label="actions">⚡</span>
-              Quick Actions
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-3 sm:p-4 lg:p-6 pt-0">
-            <div className="space-y-2 sm:space-y-3">
-              <Button 
-                onClick={() => handleQuickAction('attendance')}
-                className="w-full bg-blue-600 text-white hover:bg-blue-700 transition-all justify-start text-xs sm:text-sm font-semibold shadow-md rounded-lg flex items-center gap-2 py-3"
-              >
-                <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
-                Mark Today's Attendance
-              </Button>
-              <Button 
-                onClick={() => handleQuickAction('students')}
-                className="w-full bg-green-600 text-white hover:bg-green-700 transition-all justify-start text-xs sm:text-sm font-semibold shadow-md rounded-lg flex items-center gap-2 py-3"
-              >
-                <Users className="w-4 h-4 sm:w-5 sm:h-5" />
-                Add New Student
-              </Button>
-              <Button 
-                onClick={() => handleQuickAction('announcements')}
-                className="w-full bg-purple-600 text-white hover:bg-purple-700 transition-all justify-start text-xs sm:text-sm font-semibold shadow-md rounded-lg flex items-center gap-2 py-3"
-              >
-                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
-                Create Announcement
-              </Button>
-              <Button 
-                onClick={() => handleQuickAction('export')}
-                className="w-full bg-orange-600 text-white hover:bg-orange-700 transition-all justify-start text-xs sm:text-sm font-semibold shadow-md rounded-lg flex items-center gap-2 py-3"
-              >
-                <CreditCard className="w-4 h-4 sm:w-5 sm:h-5" />
-                Export Data to Excel
-              </Button>
             </div>
           </CardContent>
         </Card>

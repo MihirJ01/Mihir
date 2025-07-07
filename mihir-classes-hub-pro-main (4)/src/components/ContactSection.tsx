@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 
 const ContactSection = () => {
@@ -10,18 +9,10 @@ const ContactSection = () => {
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Ready to Start Your Learning Journey?
           </h2>
-          <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-            Join thousands of students who are already excelling with our courses
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-md mx-auto">
-            <input 
-              type="email" 
-              placeholder="Enter your email"
-              className="flex-1 px-4 py-3 rounded-lg text-gray-900 border-0 focus:ring-2 focus:ring-blue-500"
-            />
-            <Button size="lg" className="bg-blue-600 hover:bg-blue-700 px-8">
-              Get Started
-            </Button>
+          {/* Contact phone number display instead of input/button */}
+          <div className="flex flex-col items-center justify-center mt-8">
+            <span className="text-lg sm:text-2xl font-bold text-blue-400 mb-2">Contact Us</span>
+            <span className="text-2xl sm:text-3xl font-extrabold text-white bg-blue-700 px-6 py-3 rounded-xl shadow-lg tracking-wide">+91 98679 12899</span>
           </div>
         </div>
       </div>

@@ -52,7 +52,7 @@ const AppDashboard = () => {
             <AttendanceSystem />
           </ProtectedRoute>
         );
-      case "fees":
+      case "fee-tracking":
         return (
           <ProtectedRoute requireAdmin>
             <FeeTracking />
@@ -116,8 +116,8 @@ const AppDashboard = () => {
                   Mihir Classes <span className="font-light">- Admin Panel</span>
                 </h1>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-gray-500 text-base">Complete Class Management System</span>
-                  <span className="bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full ml-2">Welcome, {user?.name}</span>
+                  {/* Removed: <span className="text-gray-500 text-base">Complete Class Management System</span> */}
+                  {/* Removed: <span className="bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full ml-2">Welcome, {user?.name}</span> */}
                 </div>
               </div>
               <Button onClick={logout} variant="outline" className="gap-2 text-xs lg:text-sm ml-auto">
@@ -126,16 +126,7 @@ const AppDashboard = () => {
               </Button>
             </div>
           </header>
-          {/* Enhanced Section Header for Dashboard */}
-          {activeSection === 'dashboard' && (
-            <section className="bg-blue-50 rounded-xl px-6 py-4 mb-6 shadow-sm border border-blue-100">
-              <h2 className="text-2xl font-bold text-blue-900 flex items-center gap-2">
-                <span role="img" aria-label="dashboard">🏠</span>
-                Dashboard
-              </h2>
-              <p className="text-gray-600 text-sm mt-1">Overview and analytics for your classes</p>
-            </section>
-          )}
+
           {/* Section headers for other pages can be added similarly in their respective components */}
           <div className="flex-1 overflow-auto p-4 lg:p-6">
             <div className="max-w-7xl mx-auto">
