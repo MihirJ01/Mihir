@@ -40,7 +40,7 @@ const Navigation = () => {
             </Button>
             {!isNative && (
               <a
-                href="/path/to/app.apk"
+                href="/MihirClasses.apk"
                 className="ml-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow text-sm transition"
                 download
               >
@@ -72,7 +72,7 @@ const Navigation = () => {
                 </Button>
                 {!isNative && (
                   <a
-                    href="/path/to/app.apk"
+                    href="/MihirClasses.apk"
                     className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow text-sm transition text-center"
                     download
                   >
