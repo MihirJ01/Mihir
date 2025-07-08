@@ -211,7 +211,7 @@ export function AttendanceSystem() {
                     <h4 className="font-bold text-blue-900 text-lg">{student.name}</h4>
                     <p className="text-sm text-gray-600">Class {student.class} - {student.board} | Batch: {student.batch_time}</p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 ml-0 sm:ml-2 w-full sm:w-auto">
                     <Button
                       size="sm"
                       variant={status === "present" ? "default" : "outline"}
