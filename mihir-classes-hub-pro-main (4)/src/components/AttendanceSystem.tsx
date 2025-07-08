@@ -83,19 +83,6 @@ export function AttendanceSystem() {
       });
     }
 
-    // Log activity to Supabase
-    if (user) {
-      await supabase.from('recent_activities').insert([
-        {
-          user_id: null, // If you have user id, use it here
-          user_name: user.name,
-          action: 'marked attendance',
-          details: `Marked ${student.name} as ${status}`,
-          created_at: new Date().toISOString(),
-        } as TablesInsert<'recent_activities'>
-      ]);
-    }
-
     toast({
       title: "Success",
       description: `Attendance marked as ${status} for ${student.name}`,

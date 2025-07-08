@@ -34,15 +34,21 @@ export function useAuth() {
     setUser(userData);
 
     // Log activity to Supabase
-    supabase.from('recent_activities').insert([
-      {
-        user_id: null, // If you have user id, use it here
-        user_name: name,
-        action: 'logged in',
-        details: null,
-        created_at: new Date().toISOString(),
-      } as TablesInsert<'recent_activities'>
-    ]);
+    if (role === "user") {
+      supabase.from('recent_activities').insert([
+        {
+          user_id: null, // If you have user id, use it here
+          user_name: name,
+          action: 'logged in',
+          details: null,
+          created_at: new Date().toISOString(),
+        } as TablesInsert<'recent_activities'>
+      ]).then(({ error }) => {
+        if (error) {
+          console.error('Failed to log activity (login):', error);
+        }
+      });
+    }
   };
 
   const logout = () => {
