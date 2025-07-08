@@ -40,9 +40,10 @@ const Navigation = () => {
             </Button>
             {!isNative && (
               <a
-                href="/MihirClasses.apk"
+                href="https://docs.google.com/uc?export=download&id=1mK5C_FxX7l-w9RcWKwsPS-a9L9r9Ks4H"
                 className="ml-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow text-sm transition"
-                download
+                target="_blank"
+                rel="noopener noreferrer"
               >
                 Download App
               </a>
@@ -72,9 +73,10 @@ const Navigation = () => {
                 </Button>
                 {!isNative && (
                   <a
-                    href="/MihirClasses.apk"
+                    href="https://docs.google.com/uc?export=download&id=1mK5C_FxX7l-w9RcWKwsPS-a9L9r9Ks4H"
                     className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow text-sm transition text-center"
-                    download
+                    target="_blank"
+                    rel="noopener noreferrer"
                   >
                     Download App
                   </a>
