@@ -40,7 +40,7 @@ const Navigation = () => {
             </Button>
             {!isNative && (
               <a
-                href="https://docs.google.com/uc?export=download&id=1mK5C_FxX7l-w9RcWKwsPS-a9L9r9Ks4H"
+                href="https://drive.usercontent.google.com/download?id=1WIaCfTaJ-QNdR-brmjskGgk1fJGSXpLB&export=download&authuser=0"
                 className="ml-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow text-sm transition"
                 target="_blank"
                 rel="noopener noreferrer"
