@@ -570,11 +570,6 @@ export function Memories({ isUserView = false }: { isUserView?: boolean } = {}) 
                 <Upload className="w-4 h-4" /> Create Album
               </Button>
             )}
-            {!isUserView && isAdmin && (
-              <Button onClick={() => setShowUpload(v => !v)} variant="outline" className="gap-2">
-                <Upload className="w-4 h-4" /> Add Video
-              </Button>
-            )}
           </div>
         )}
       </section>

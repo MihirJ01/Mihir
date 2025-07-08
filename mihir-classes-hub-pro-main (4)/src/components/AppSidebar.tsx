@@ -4,7 +4,7 @@ const menuItems = [
   { title: "Dashboard", icon: "🏠", id: "dashboard", adminOnly: true },
   { title: "Students", icon: "🧑‍🎓", id: "students", adminOnly: true },
   { title: "Attendance", icon: "📅", id: "attendance", adminOnly: true },
-  { title: "Fee Tracking", icon: "💳", id: "fees", adminOnly: true },
+  { title: "Fee Tracking", icon: "💳", id: "fee-tracking", adminOnly: true },
   { title: "Notes", icon: "📖", id: "notes", adminOnly: false },
   { title: "Announcements", icon: "📢", id: "announcements", adminOnly: false },
   { title: "Memories", icon: "🎞️", id: "memories", adminOnly: false },

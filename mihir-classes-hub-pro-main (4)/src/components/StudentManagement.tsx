@@ -14,6 +14,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { StudentPaymentDetails } from "./StudentPaymentDetails";
+import { Atom } from './Atom';
 
 interface Student {
   id: string;
@@ -238,8 +239,8 @@ export function StudentManagement() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg">Loading students...</div>
+      <div className="flex justify-center items-center py-8">
+        <Atom color="#7cc6ff" size="medium" text="Loading students..." textColor="#333" />
       </div>
     );
   }
