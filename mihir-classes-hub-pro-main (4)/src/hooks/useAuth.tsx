@@ -1,4 +1,6 @@
 import { useLocalStorage } from "./useLocalStorage";
+import { supabase } from "@/integrations/supabase/client";
+import type { TablesInsert } from "@/integrations/supabase/types";
 
 export interface User {
   role: "admin" | "user";
@@ -30,6 +32,17 @@ export function useAuth() {
     };
     console.log("useAuth - logging in user:", userData);
     setUser(userData);
+
+    // Log activity to Supabase
+    supabase.from('recent_activities').insert([
+      {
+        user_id: null, // If you have user id, use it here
+        user_name: name,
+        action: 'logged in',
+        details: null,
+        created_at: new Date().toISOString(),
+      } as TablesInsert<'recent_activities'>
+    ]);
   };
 
   const logout = () => {

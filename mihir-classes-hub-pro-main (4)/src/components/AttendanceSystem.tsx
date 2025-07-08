@@ -6,6 +6,9 @@ import { Calendar, Users, Download, CheckCircle, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { exportToExcel } from "@/utils/excelExport";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import type { TablesInsert } from "@/integrations/supabase/types";
 
 interface Student {
   id: string;
@@ -43,6 +46,7 @@ export function AttendanceSystem() {
   const [selectedBatch, setSelectedBatch] = useState("all");
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const students = studentsData as Student[];
   const attendance = attendanceData as AttendanceRecord[];
@@ -77,6 +81,19 @@ export function AttendanceSystem() {
         date: selectedDate,
         status,
       });
+    }
+
+    // Log activity to Supabase
+    if (user) {
+      await supabase.from('recent_activities').insert([
+        {
+          user_id: null, // If you have user id, use it here
+          user_name: user.name,
+          action: 'marked attendance',
+          details: `Marked ${student.name} as ${status}`,
+          created_at: new Date().toISOString(),
+        } as TablesInsert<'recent_activities'>
+      ]);
     }
 
     toast({
