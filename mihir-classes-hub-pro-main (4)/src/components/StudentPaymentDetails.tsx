@@ -37,6 +37,7 @@ interface StudentPaymentDetailsProps {
 
 export interface StudentPaymentDetailsRef {
   captureExcelPreview: () => Promise<Blob | null>;
+  previewNode?: HTMLDivElement | null;
 }
 
 // Add this style block at the top of the file (or in your global CSS if preferred)
@@ -66,15 +67,14 @@ export const StudentPaymentDetails = forwardRef<StudentPaymentDetailsRef, Studen
 
     useImperativeHandle(ref, () => ({
       captureExcelPreview: async () => {
-        if (!previewRef.current || payments.length === 0) {
+        if (!previewRef.current) {
           toast({
             title: "Error",
-            description: "No payment data available to capture",
+            description: "No card available to capture",
             variant: "destructive",
           });
           return null;
         }
-        
         try {
           const canvas = await html2canvas(previewRef.current, { backgroundColor: '#fff', scale: 2 });
           const blob = await new Promise<Blob>((resolve) => {
@@ -89,7 +89,8 @@ export const StudentPaymentDetails = forwardRef<StudentPaymentDetailsRef, Studen
           });
           return null;
         }
-      }
+      },
+      previewNode: previewRef.current
     }));
 
     useEffect(() => {
@@ -160,19 +161,14 @@ export const StudentPaymentDetails = forwardRef<StudentPaymentDetailsRef, Studen
 
     return (
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto flex items-center justify-center min-h-[90vh] flex-col py-8 sm:py-12">
-          {/* Payment Details Header at the very top */}
-          <div className="flex items-center justify-center w-full mb-2 mt-2">
-            <DollarSign className="w-6 h-6 text-blue-600 mr-1" />
-            <span className="text-xl font-bold text-gray-900">Payment Details - {student.name}</span>
+        <DialogContent className="w-screen h-screen max-w-full max-h-full rounded-none p-0 flex flex-col sm:max-w-4xl sm:max-h-[90vh] sm:rounded-2xl sm:p-8 sm:items-center sm:justify-center sm:flex-col">
+          <DialogTitle>Payment Details</DialogTitle>
+          <div className="flex items-center justify-between w-full px-4 pt-4 sm:justify-center sm:pt-0 sm:px-0 sm:mb-2 sm:mt-2">
+            <span className="text-lg font-bold text-gray-900 sm:text-xl">Payment Details - {student.name}</span>
+            {/* The close button is rendered by DialogContent, so no need to add it here unless custom */}
           </div>
-
-          <style>{captureModeStyle}</style>
-
-          <div className="space-y-6">
-            {/* Card preview for WhatsApp sharing */}
-            <div ref={previewRef} className="w-full flex justify-center">
-              <Card className={`w-full max-w-full sm:max-w-lg shadow-2xl border-0 bg-gradient-to-br from-white via-blue-50 to-blue-100/60 rounded-3xl flex-grow mx-auto mt-4 min-h-[600px]${captureMode ? ' capture-mode' : ''} p-2 sm:p-6`}>
+          <div className="flex-1 overflow-y-auto w-full px-2 pb-4 sm:w-full sm:px-0 sm:pb-0">
+            <Card className="w-full max-w-full bg-gradient-to-br from-white via-blue-50 to-blue-100/60 rounded-none p-2 mx-auto sm:rounded-3xl sm:max-w-lg sm:p-6 sm:mt-4 sm:min-h-[600px]">
                 <div className="w-full relative pt-4 sm:pt-6 pb-2 flex items-center justify-center">
                   <div className="absolute left-2 sm:left-6 top-1 flex items-center">
                     {student.photoUrl ? (
@@ -246,54 +242,56 @@ export const StudentPaymentDetails = forwardRef<StudentPaymentDetailsRef, Studen
                   </div>
                 </CardContent>
               </Card>
-            </div>
-            {/* WhatsApp Button below card, only if not loading and there is payment data */}
-            {(!loading && payments.length > 0) && (
-              <div className="flex justify-center mt-4">
-                <Button
-                  onClick={async () => {
-                    setCaptureMode(true);
-                    await new Promise(r => setTimeout(r, 500)); // allow DOM to update (increased to 500ms)
-                    if (!previewRef.current) return;
-                    try {
-                      const canvas = await html2canvas(previewRef.current, { backgroundColor: '#fff', scale: 2 });
-                      const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'));
-                      if (!blob) throw new Error('Failed to capture image');
-                      await navigator.clipboard.write([
-                        new window.ClipboardItem({ 'image/png': blob as Blob })
-                      ]);
-                      toast({ title: 'Copied!', description: 'Fee card image copied. Paste it in WhatsApp Web.', variant: 'default' });
-                      window.open('https://web.whatsapp.com/', '_blank');
-                    } catch (err) {
-                      toast({ title: 'Error', description: 'Failed to copy image to clipboard', variant: 'destructive' });
-                    } finally {
-                      setCaptureMode(false);
-                    }
-                  }}
-                  style={{ backgroundColor: '#25D366', color: 'white', border: 'none' }}
-                  className="gap-2 font-semibold rounded-lg shadow px-6 py-2 text-base"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 32 32" fill="currentColor"><path d="M16.001 3.2c-7.067 0-12.8 5.733-12.8 12.8 0 2.267.6 4.467 1.733 6.4l-1.867 6.933 7.067-1.867c1.867 1.067 4 1.6 6.133 1.6h.001c7.067 0 12.8-5.733 12.8-12.8s-5.733-12.8-12.8-12.8zm6.933 19.467c-.267.8-1.467 1.467-2 1.6-.533.133-1.2.267-2.067.133-.467-.067-1.067-.2-1.867-.4-4.133-1.067-6.8-5.067-7.067-5.333-.2-.267-1.733-2.267-1.733-4.267 0-2 .8-2.933 1.067-3.2.267-.267.6-.4.8-.4.2 0 .4 0 .533.007.167.007.4.027.6.467.233.533.8 1.867.867 2.007.067.133.133.267.067.4-.067.133-.1.2-.2.333-.1.133-.2.233-.267.333-.133.2-.267.4-.133.667.133.267.6 1.067 1.267 1.733.867.867 1.6 1.133 1.867 1.267.267.133.4.1.533-.067.133-.167.6-.667.767-.9.167-.233.333-.2.567-.133.233.067 1.467.7 1.733.833.267.133.433.2.5.333.067.133.067.767-.167 1.5-.233.733-.7 1.067-.933 1.2-.233.133-.467.2-.733.133-.267-.067-1.067-.4-2.067-1.267-1.067-.867-1.733-1.933-1.933-2.267-.2-.333-.2-.6-.133-.733.067-.133.2-.2.333-.267.133-.067.267-.133.4-.267.133-.133.267-.267.333-.4.067-.133.067-.267.067-.4 0-.133-.067-.267-.133-.4-.067-.133-.633-1.467-.867-2.007-.233-.533-.433-.467-.6-.467-.167 0-.333 0-.533.007-.2.007-.533.133-.8.4-.267.267-1.067 1.2-1.067 3.2 0 2 .933 4 1.733 4.267.267.267 2.933 4.267 7.067 5.333.8.2 1.4.333 1.867.4.867.133 1.533 0 2.067-.133.533-.133 1.733-.8 2-1.6.267-.8.267-1.467.2-1.6-.067-.133-.267-.2-.533-.267-.267-.067-1.6-.8-1.867-.9-.267-.1-.433-.133-.6.133-.167.267-.667.9-.767 1.033-.1.133-.2.2-.333.267-.133.067-.267.067-.4.067-.133 0-.267-.067-.4-.133-.267-.133-1.067-.4-1.867-1.267-.867-.867-1.133-1.6-1.267-1.867-.133-.267-.1-.4.067-.533.167-.133.667-.6.9-.767.233-.167.2-.333.133-.567-.067-.233-.7-1.467-.833-1.733-.133-.267-.2-.433-.333-.5-.133-.067-.767-.067-1.5.167-.733.233-1.067.7-1.2.933-.133.233-.2.467-.133.733.067.267.4 1.067 1.267 2.067.867 1.067 1.933 1.733 2.267 1.933.333.2.6.2.733.133.133-.067.2-.2.267-.333.067-.133.133-.267.267-.4.133-.133.267-.267.4-.333.133-.067.267-.067.4-.067.133 0 .267.067.4.133.267.133 1.067.4 1.867 1.267.867.867 1.133 1.6 1.267 1.867.133.267.1.4-.067.533-.167.133-.667.6-.9.767-.233.167-.2.333-.133.567.067.233.7 1.467.833 1.733.133.267.2.433.333.5.133.067.767.067 1.5-.167.733-.233 1.067-.7 1.2-.933.133-.233.2-.467.133-.733-.067-.267-.4-1.067-1.267-2.067-.867-1.067-1.933-1.733-2.267-1.933-.333-.2-.6-.2-.733-.133-.133.067-.2.2-.267.333-.067.133-.133.267-.267.4-.133.133-.267.267-.4.333-.133.067-.267.067-.4.067z"/></svg>
-                  WhatsApp
-                  </Button>
-            </div>
-            )}
-
-            {loading ? (
-              <div className="text-center py-8">Loading payment history...</div>
-            ) : payments.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                No payment records found for this student.
+              {/* WhatsApp Button and loading/empty states remain unchanged */}
+              {(
+                // Remove the check for payments.length > 0 so WhatsApp button always shows
+                !loading
+              ) && (
+                <div className="flex justify-center mt-4">
+                  <Button
+                    onClick={async () => {
+                      setCaptureMode(true);
+                      await new Promise(r => setTimeout(r, 500)); // allow DOM to update
+                      if (!previewRef.current) return;
+                      try {
+                        const canvas = await html2canvas(previewRef.current, { backgroundColor: '#fff', scale: 2 });
+                        const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'));
+                        if (!blob) throw new Error('Failed to capture image');
+                        await navigator.clipboard.write([
+                          new window.ClipboardItem({ 'image/png': blob as Blob })
+                        ]);
+                        toast({ title: 'Copied!', description: 'Fee card image copied. Paste it in WhatsApp Web.', variant: 'default' });
+                        window.open('https://web.whatsapp.com/', '_blank');
+                      } catch (err) {
+                        toast({ title: 'Error', description: 'Failed to copy image to clipboard', variant: 'destructive' });
+                      } finally {
+                        setCaptureMode(false);
+                      }
+                    }}
+                    style={{ backgroundColor: '#25D366', color: 'white', border: 'none' }}
+                    className="gap-2 font-semibold rounded-lg shadow px-6 py-2 text-base"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 32 32" fill="currentColor"><path d="M16.001 3.2c-7.067 0-12.8 5.733-12.8 12.8 0 2.267.6 4.467 1.733 6.4l-1.867 6.933 7.067-1.867c1.867 1.067 4 1.6 6.133 1.6h.001c7.067 0 12.8-5.733 12.8-12.8s-5.733-12.8-12.8-12.8zm6.933 19.467c-.267.8-1.467 1.467-2 1.6-.533.133-1.2.267-2.067.133-.467-.067-1.067-.2-1.867-.4-4.133-1.067-6.8-5.067-7.067-5.333-.2-.267-1.733-2.267-1.733-4.267 0-2 .8-2.933 1.067-3.2.267-.267.6-.4.8-.4.2 0 .4 0 .533.007.167.007.4.027.6.467.233.533.8 1.867.867 2.007.067.133.133.267.067.4-.067.133-.1.2-.2.333-.1.133-.2.233-.267.333-.133.2-.267.4-.133.667.133.267.6 1.067 1.267 1.733.867.867 1.6 1.133 1.867 1.267.267.133.4.1.533-.067.133-.167.6-.667.767-.9.167-.233.333-.2.567-.133.233.067 1.467.7 1.733.833.267.133.433.2.5.333.067.133.067.767-.167 1.5-.233.733-.7 1.067-.933 1.2-.233.133-.467.2-.733.133-.267-.067-1.067-.4-2.067-1.267-1.067-.867-1.733-1.933-1.933-2.267-.2-.333-.2-.6-.133-.733.067-.133.2-.2.333-.267.133-.067.267-.133.4-.267.133-.133.267-.267.333-.4.067-.133.067-.267.067-.4 0-.133-.067-.267-.133-.4-.067-.133-.633-1.467-.867-2.007-.233-.533-.433-.467-.6-.467-.167 0-.333 0-.533.007-.2.007-.533.133-.8.4-.267.267-1.067 1.2-1.067 3.2 0 2 .933 4 1.733 4.267.267.267 2.933 4.267 7.067 5.333.8.2 1.4.333 1.867.4.867.133 1.533 0 2.067-.133.533-.133 1.733-.8 2-1.6.267-.8.267-1.467.2-1.6-.067-.133-.267-.2-.533-.267-.267-.067-1.6-.8-1.867-.9-.267-.1-.433-.133-.6.133-.167.267-.667.9-.767 1.033-.1.133-.2.2-.333.267-.133.067-.267.067-.4.067-.133 0-.267-.067-.4-.133-.267-.133-1.067-.4-1.867-1.267-.867-.867-1.133-1.6-1.267-1.867-.133-.267-.1-.4.067-.533.167-.133.667-.6.9-.767.233-.167.2-.333.133-.567-.067-.233-.7-1.467-.833-1.733-.133-.267-.2-.433-.333-.5-.133-.067-.767-.067-1.5.167-.733.233-1.067.7-1.2.933-.133.233-.2.467-.133.733.067.267.4 1.067 1.267 2.067.867 1.067 1.933 1.733 2.267 1.933.333.2.6.2.733.133.133-.067.2-.2.267-.333.067-.133.133-.267.267-.4.133-.133.267-.267.4-.333.133-.067.267-.067.4-.067.133 0 .267.067.4.133.267.133 1.067.4 1.867 1.267.867.867 1.133 1.6 1.267 1.867.133.267.1.4-.067.533-.167.133-.667.6-.9.767-.233.167-.2.333-.133.567.067.233.7 1.467.833 1.733.133.267.2.433.333.5.133.067.767.067 1.5-.167.733-.233 1.067-.7 1.2-.933.133-.233.2-.467.133-.733-.067-.267-.4-1.067-1.267-2.067-.867-1.067-1.933-1.733-2.267-1.933-.333-.2-.6-.2-.733-.133-.133.067-.2.2-.267.333-.067.133-.133.267-.267.4-.133.133-.267.267-.4.333-.133.067-.267.067-.4.067z"/></svg>
+                    WhatsApp
+                    </Button>
               </div>
-            ) : (
-              <></>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-);
+              )}
+
+              {loading ? (
+                <div className="text-center py-8">Loading payment history...</div>
+              ) : payments.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  No payment records found for this student.
+                </div>
+              ) : (
+                <></>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      );
+    }
+  );
 
 // Helper component to render the term-wise fee table
 function TermWiseFeeTable({ student, payments }) {

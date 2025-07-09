@@ -280,9 +280,11 @@ export function StudentFeeCard({ student, feeRecords, onPaymentAdded, onCardDele
       // Wait for the dialog to open and data to load
       setTimeout(async () => {
         try {
+          // Debug: log the previewNode
+          console.log('previewNode:', paymentDetailsRef.current?.previewNode);
           const blob = await paymentDetailsRef.current?.captureExcelPreview();
           if (!blob) {
-            toast({ title: 'Error', description: 'No payment data available', variant: 'destructive' });
+            toast({ title: 'Error', description: 'Failed to capture card image', variant: 'destructive' });
             setIsDetailsDialogOpen(false);
             return;
           }
@@ -300,7 +302,7 @@ export function StudentFeeCard({ student, feeRecords, onPaymentAdded, onCardDele
           toast({ title: 'Error', description: 'Failed to copy image to clipboard', variant: 'destructive' });
           setIsDetailsDialogOpen(false);
         }
-      }, 1000); // Wait 1 second for dialog to load data
+      }, 2000); // Wait 2 seconds for dialog to load data
       
     } catch (error) {
       toast({ title: 'Error', description: 'Failed to open payment details', variant: 'destructive' });
