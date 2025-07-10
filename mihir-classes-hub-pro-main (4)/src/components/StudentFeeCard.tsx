@@ -272,38 +272,77 @@ export function StudentFeeCard({ student, feeRecords, onPaymentAdded, onCardDele
     onPaymentAdded();
   };
 
+  const waitForPreviewNode = async (ref, maxTries = 10, interval = 200) => {
+    for (let i = 0; i < maxTries; i++) {
+      if (ref.current?.previewNode) return ref.current.previewNode;
+      await new Promise(res => setTimeout(res, interval));
+    }
+    return null;
+  };
+
   const handleWhatsAppClick = async () => {
     try {
-      // First open the payment details dialog to load the data
       setIsDetailsDialogOpen(true);
-      
-      // Wait for the dialog to open and data to load
       setTimeout(async () => {
         try {
-          // Debug: log the previewNode
-          console.log('previewNode:', paymentDetailsRef.current?.previewNode);
-          const blob = await paymentDetailsRef.current?.captureExcelPreview();
+          // Wait for the previewNode to be available
+          const previewNode = await waitForPreviewNode(paymentDetailsRef);
+          if (!previewNode) {
+            toast({ title: 'Error', description: 'Card not rendered in time', variant: 'destructive' });
+            setIsDetailsDialogOpen(false);
+            return;
+          }
+          // Capture the image
+          const canvas = await html2canvas(previewNode, { backgroundColor: '#fff', scale: 2 });
+          const blob = await new Promise<Blob | null>(resolve => canvas.toBlob((b) => resolve(b), 'image/png'));
           if (!blob) {
             toast({ title: 'Error', description: 'Failed to capture card image', variant: 'destructive' });
             setIsDetailsDialogOpen(false);
             return;
           }
-          
-          await navigator.clipboard.write([
-            new window.ClipboardItem({ 'image/png': blob })
-          ]);
-          
-          toast({ title: 'Copied!', description: 'Fee report image copied to clipboard. Paste it in WhatsApp Web.' });
-          window.open('https://web.whatsapp.com/', '_blank');
-          
-          // Close the dialog after copying
-          setIsDetailsDialogOpen(false);
+          // Platform detection
+          const isMobileDevice = typeof window !== 'undefined' && (
+            /android|iphone|ipad|ipod|opera mini|iemobile|mobile/i.test(navigator.userAgent)
+          );
+          if (isMobileDevice) {
+            // Try Web Share API
+            const file = new File([blob], 'feecard.png', { type: 'image/png' });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+              try {
+                await navigator.share({
+                  files: [file],
+                  title: 'Fee Card',
+                  text: 'Here is the fee card details.'
+                });
+                setIsDetailsDialogOpen(false);
+                return;
+              } catch (err) {
+                // User cancelled or error, fallback to download
+              }
+            }
+            // Fallback: Download
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'feecard.png';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            toast({ title: 'Image saved!', description: 'Open WhatsApp and attach the image from your gallery.' });
+            setIsDetailsDialogOpen(false);
+          } else {
+            // Desktop: Copy to clipboard and open WhatsApp Web
+            await navigator.clipboard.write([new window.ClipboardItem({ 'image/png': blob })]);
+            toast({ title: 'Copied!', description: 'Paste the image in WhatsApp Web.' });
+            window.open('https://web.whatsapp.com/', '_blank');
+            setIsDetailsDialogOpen(false);
+          }
         } catch (error) {
           toast({ title: 'Error', description: 'Failed to copy image to clipboard', variant: 'destructive' });
           setIsDetailsDialogOpen(false);
         }
       }, 2000); // Wait 2 seconds for dialog to load data
-      
     } catch (error) {
       toast({ title: 'Error', description: 'Failed to open payment details', variant: 'destructive' });
     }
