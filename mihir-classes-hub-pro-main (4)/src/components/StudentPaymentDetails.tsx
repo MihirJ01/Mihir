@@ -168,7 +168,7 @@ export const StudentPaymentDetails = forwardRef<StudentPaymentDetailsRef, Studen
             {/* The close button is rendered by DialogContent, so no need to add it here unless custom */}
           </div>
           <div className="flex-1 overflow-y-auto w-full px-2 pb-4 sm:w-full sm:px-0 sm:pb-0">
-            <Card className="w-full max-w-full bg-gradient-to-br from-white via-blue-50 to-blue-100/60 rounded-none p-2 mx-auto sm:rounded-3xl sm:max-w-lg sm:p-6 sm:mt-4 sm:min-h-[600px]">
+            <Card className="w-full max-w-xs sm:max-w-md bg-gradient-to-br from-white via-blue-50 to-blue-100/60 rounded-none p-2 mx-auto sm:rounded-2xl sm:p-4 sm:mt-2 sm:min-h-[300px]">
                 <div className="w-full relative pt-4 sm:pt-6 pb-2 flex items-center justify-center">
                   <div className="absolute left-2 sm:left-6 top-1 flex items-center">
                     {student.photoUrl ? (
