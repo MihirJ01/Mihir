@@ -280,74 +280,6 @@ export function StudentFeeCard({ student, feeRecords, onPaymentAdded, onCardDele
     return null;
   };
 
-  const handleWhatsAppClick = async () => {
-    try {
-      setIsDetailsDialogOpen(true);
-      setTimeout(async () => {
-        try {
-          // Wait for the previewNode to be available
-          const previewNode = await waitForPreviewNode(paymentDetailsRef);
-          if (!previewNode) {
-            toast({ title: 'Error', description: 'Card not rendered in time', variant: 'destructive' });
-            setIsDetailsDialogOpen(false);
-            return;
-          }
-          // Capture the image
-          const canvas = await html2canvas(previewNode, { backgroundColor: '#fff', scale: 2 });
-          const blob = await new Promise<Blob | null>(resolve => canvas.toBlob((b) => resolve(b), 'image/png'));
-          if (!blob) {
-            toast({ title: 'Error', description: 'Failed to capture card image', variant: 'destructive' });
-            setIsDetailsDialogOpen(false);
-            return;
-          }
-          // Platform detection
-          const isMobileDevice = typeof window !== 'undefined' && (
-            /android|iphone|ipad|ipod|opera mini|iemobile|mobile/i.test(navigator.userAgent)
-          );
-          if (isMobileDevice) {
-            // Try Web Share API
-            const file = new File([blob], 'feecard.png', { type: 'image/png' });
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-              try {
-                await navigator.share({
-                  files: [file],
-                  title: 'Fee Card',
-                  text: 'Here is the fee card details.'
-                });
-                setIsDetailsDialogOpen(false);
-                return;
-              } catch (err) {
-                // User cancelled or error, fallback to download
-              }
-            }
-            // Fallback: Download
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'feecard.png';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            toast({ title: 'Image saved!', description: 'Open WhatsApp and attach the image from your gallery.' });
-            setIsDetailsDialogOpen(false);
-          } else {
-            // Desktop: Copy to clipboard and open WhatsApp Web
-            await navigator.clipboard.write([new window.ClipboardItem({ 'image/png': blob })]);
-            toast({ title: 'Copied!', description: 'Paste the image in WhatsApp Web.' });
-            window.open('https://web.whatsapp.com/', '_blank');
-            setIsDetailsDialogOpen(false);
-          }
-        } catch (error) {
-          toast({ title: 'Error', description: 'Failed to copy image to clipboard', variant: 'destructive' });
-          setIsDetailsDialogOpen(false);
-        }
-      }, 2000); // Wait 2 seconds for dialog to load data
-    } catch (error) {
-      toast({ title: 'Error', description: 'Failed to open payment details', variant: 'destructive' });
-    }
-  };
-
   return (
     <Card
       className="w-full relative bg-white/90 rounded-2xl shadow-lg border border-blue-100 hover:shadow-2xl transition-all duration-200 transform hover:-translate-y-1 animate-fade-in"
@@ -437,15 +369,6 @@ export function StudentFeeCard({ student, feeRecords, onPaymentAdded, onCardDele
             >
               <Plus className="w-4 h-4" />
               Add Payment
-            </Button>
-            <Button 
-              onClick={handleWhatsAppClick}
-              variant="outline" 
-              className="gap-2 w-full sm:w-auto font-semibold rounded-lg shadow"
-              size="sm"
-              style={{ backgroundColor: '#25D366', color: 'white', border: 'none' }}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 32 32" fill="currentColor"><path d="M16.001 3.2c-7.067 0-12.8 5.733-12.8 12.8 0 2.267.6 4.467 1.733 6.4l-1.867 6.933 7.067-1.867c1.867 1.067 4 1.6 6.133 1.6h.001c7.067 0 12.8-5.733 12.8-12.8s-5.733-12.8-12.8-12.8zm6.933 19.467c-.267.8-1.467 1.467-2 1.6-.533.133-1.2.267-2.067.133-.467-.067-1.067-.2-1.867-.4-4.133-1.067-6.8-5.067-7.067-5.333-.2-.267-1.733-2.267-1.733-4.267 0-2 .8-2.933 1.067-3.2.267-.267.6-.4.8-.4.2 0 .4 0 .533.007.167.007.4.027.6.467.233.533.8 1.867.867 2.007.067.133.133.267.067.4-.067.133-.1.2-.2.333-.1.133-.2.233-.267.333-.133.2-.267.4-.133.667.133.267.6 1.067 1.267 1.733.867.867 1.6 1.133 1.867 1.267.267.133.4.1.533-.067.133-.167.6-.667.767-.9.167-.233.333-.2.567-.133.233.067 1.467.7 1.733.833.267.133.433.2.5.333.067.133.067.767-.167 1.5-.233.733-.7 1.067-.933 1.2-.233.133-.467.2-.733.133-.267-.067-1.067-.4-2.067-1.267-1.067-.867-1.733-1.933-1.933-2.267-.2-.333-.2-.6-.133-.733.067-.133.2-.2.333-.267.133-.067.267-.133.4-.267.133-.133.267-.267.333-.4.067-.133.067-.267.067-.4 0-.133-.067-.267-.133-.4-.067-.133-.633-1.467-.867-2.007-.233-.533-.433-.467-.6-.467-.167 0-.333 0-.533.007-.2.007-.533.133-.8.4-.267.267-1.067 1.2-1.067 3.2 0 2 .933 4 1.733 4.267.267.267 2.933 4.267 7.067 5.333.8.2 1.4.333 1.867.4.867.133 1.533 0 2.067-.133.533-.133 1.733-.8 2-1.6.267-.8.267-1.467.2-1.6-.067-.133-.267-.2-.533-.267-.267-.067-1.6-.8-1.867-.9-.267-.1-.433-.133-.6.133-.167.267-.667.9-.767 1.033-.1.133-.2.2-.333.267-.133.067-.267.067-.4.067-.133 0-.267-.067-.4-.133-.267-.133-1.067-.4-1.867-1.267-.867-.867-1.133-1.6-1.267-1.867-.133-.267-.1-.4.067-.533.167-.133.667-.6.9-.767.233-.167.2-.333.133-.567-.067-.233-.7-1.467-.833-1.733-.133-.267-.2-.433-.333-.5-.133-.067-.767-.067-1.5.167-.733.233-1.067.7-1.2.933-.133.233-.2.467-.133.733.067.267.4 1.067 1.267 2.067.867 1.067 1.933 1.733 2.267 1.933.333.2.6.2.733.133.133-.067.2-.2.267-.333.067-.133.133-.267.267-.4.133-.133.267-.267.4-.333.133-.067.267-.067.4-.067.133 0 .267.067.4.133.267.133 1.067.4 1.867 1.267.867.867 1.133 1.6 1.267 1.867.133.267.1.4-.067.533-.167.133-.667.6-.9.767-.233.167-.2.333-.133.567.067.233.7 1.467.833 1.733.133.267.2.433.333.5.133.067.767.067 1.5-.167.733-.233 1.067-.7 1.2-.933.133-.233.2-.467.133-.733-.067-.267-.4-1.067-1.267-2.067-.867-1.067-1.933-1.733-2.267-1.933-.333-.2-.6-.2-.733-.133-.133.067-.2.2-.267.333-.067.133-.133.267-.267.4-.133.133-.267.267-.4.333-.133.067-.267.067-.4.067z"/></svg>
             </Button>
             <Button 
               onClick={handleViewDetails}
