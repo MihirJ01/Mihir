@@ -71,3 +71,28 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+
+## Authentication (Email + Google)
+
+This project now uses Supabase Auth for **student** and **admin** authentication:
+
+- Student login only via admin-provided `username` + `password` from `students` table.
+- Admin email/password sign-in and registration.
+- Admin Google OAuth sign-in/registration.
+- Role-aware admin profile storage in `public.user_profiles`.
+
+### Required Supabase setup
+
+1. In Supabase Dashboard → **Authentication → Providers → Google**, enable Google and configure:
+   - Client ID
+   - Client Secret
+2. Add redirect URL:
+   - `https://<your-domain>/app`
+   - `http://localhost:4173/app` (for local testing)
+3. Run Supabase migration to create `public.user_profiles` and RLS policies.
+
+### How role assignment works
+
+- Students cannot self-register; they must use credentials created by admins during admission.
+- Admin registration/sign-in can use email/password or Google OAuth.
+- Admin profile data is saved to `public.user_profiles`.
