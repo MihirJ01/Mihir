@@ -21,8 +21,12 @@ import { Memories } from "@/components/Memories";
 const AppDashboard = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { isLoggedIn, isAdmin, isUser, logout, user } = useAuth();
+  const { isLoggedIn, isAdmin, isUser, logout, loading } = useAuth();
   const isMobile = useIsMobile();
+
+  if (loading) {
+    return <div className="min-h-screen grid place-items-center text-blue-700 font-semibold">Loading...</div>;
+  }
 
   if (!isLoggedIn) {
     return <LoginPanel />;
