@@ -1,3 +1,35 @@
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
+import { User, Sparkles, BookOpen, Target, Star, X, School } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+
+const LOGIN_SUBTITLE = "Continue with Google to access Student or Admin panel.";
+
+export function LoginPanel() {
+  const [submitting, setSubmitting] = useState(false);
+  const { loginWithGoogle, authError, clearAuthError } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!authError) return;
+
+    toast({
+      title: "Authentication failed",
+      description: authError,
+      variant: "destructive",
+    });
+
+    clearAuthError();
+  }, [authError, clearAuthError, toast]);
+
+  const handleGoogleSignIn = async () => {
+    setSubmitting(true);
+    try {
+      await loginWithGoogle();
 import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -178,6 +210,13 @@ export function LoginPanel() {
             </div>
             <CardTitle className="text-3xl font-bold tracking-wider text-gray-900">Mihir Classes</CardTitle>
             <p className="text-sm text-gray-700 mt-2">
+              {LOGIN_SUBTITLE}
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4 px-8 pb-8">
+            <Button
+              onClick={handleGoogleSignIn}
+              variant="default"
               {mode === "signin" ? "Sign in with Email or Google" : "Register as Student or Admin"}
             </p>
           </CardHeader>
@@ -265,6 +304,9 @@ export function LoginPanel() {
               <User className="h-4 w-4" />
               Continue with Google
             </Button>
+            <p className="text-center text-xs text-gray-600">
+              Admin panel opens only for allowed admin Google accounts.
+            </p>
 
             <Label className="block text-center text-xs text-gray-600">
               For Google register, select role first and then continue.

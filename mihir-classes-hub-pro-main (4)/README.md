@@ -72,6 +72,80 @@ To connect a domain, navigate to Project > Settings > Domains and click Connect 
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
 
+## Authentication (Google Only)
+
+This project uses a **single Google login flow** for both admin and students.
+
+- No email/password auth.
+- No separate student/admin login panels.
+- Admin panel access is controlled only by Google email allowlist.
+
+### Production Supabase setup (for deployed project)
+
+#### 1) Enable Google provider in Supabase
+1. Open **Supabase Dashboard → Authentication → Providers → Google**.
+2. Enable Google provider.
+3. Paste your Google OAuth **Client ID** and **Client Secret**.
+4. Save.
+
+#### 2) Configure Google Cloud OAuth correctly
+1. Open **Google Cloud Console → APIs & Services → Credentials**.
+2. Create (or edit) an **OAuth 2.0 Client ID** (Web application).
+3. Add **Authorized redirect URI** exactly as shown in Supabase:
+   - `https://<PROJECT-REF>.supabase.co/auth/v1/callback`
+4. Add **Authorized JavaScript origin**:
+   - `https://<your-production-domain>`
+5. Publish OAuth consent screen if required.
+
+#### 3) Configure Supabase URL settings
+In **Supabase → Authentication → URL Configuration**:
+- **Site URL** = `https://<your-production-domain>`
+- **Redirect URLs** include:
+  - `https://<your-production-domain>/app`
+
+#### 4) Set production frontend env var (critical)
+In your hosting provider (Vercel/Netlify/etc), set:
+
+- `VITE_ADMIN_GOOGLE_EMAILS=mihirj010105@gmail.com,prasad16th@gmail.com`
+
+If multiple admins:
+
+- `VITE_ADMIN_GOOGLE_EMAILS=mihirj010105@gmail.com,prasad16th@gmail.com`
+
+> Admin access works **only** for emails in this variable.
+
+#### 5) Apply database migration in production
+Run your Supabase migration so `public.user_profiles` exists with RLS policies.
+
+### Role assignment in production
+
+- If signed-in Google email is in `VITE_ADMIN_GOOGLE_EMAILS` → user becomes **admin** and can access admin panel.
+- Else app checks admitted `students` table by `username` matching full Google email or prefix before `@`.
+- If no admitted student match exists → login is rejected.
+
+### Example for your account
+Set production env for your admins exactly:
+
+- `VITE_ADMIN_GOOGLE_EMAILS=mihirj010105@gmail.com,prasad16th@gmail.com`
+
+Then redeploy the frontend so the new env is used.
+
+
+### Vercel build error: `mode is not defined` in `LoginPanel.tsx`
+
+If Vercel shows an error pointing to:
+
+```tsx
+{mode === "signin" ? "Sign in with Email or Google" : "Register as Student or Admin"}
+```
+
+that means Vercel is building an older commit with obsolete login-panel code.
+
+Fix steps:
+1. Ensure your deployed branch contains the current Google-only `LoginPanel` (no `mode` variable).
+2. In Vercel, redeploy the latest commit (or click **Clear build cache and redeploy**).
+3. Confirm project root is `mihir-classes-hub-pro-main (4)` if this monorepo root is connected.
+4. Run local verification before pushing: `npm run build`.
 ## Authentication (Email + Google)
 
 This project now uses Supabase Auth for **student** and **admin** authentication:
