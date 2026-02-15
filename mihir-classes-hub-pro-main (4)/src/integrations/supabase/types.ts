@@ -352,6 +352,39 @@ export type Database = {
           },
         ]
       }
+      user_profiles: {
+        Row: {
+          id: string
+          email: string
+          role: "admin" | "user"
+          name: string
+          class: string | null
+          board: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          email: string
+          role: "admin" | "user"
+          name: string
+          class?: string | null
+          board?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          email?: string
+          role?: "admin" | "user"
+          name?: string
+          class?: string | null
+          board?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       videos: {
         Row: {
           id: string;
