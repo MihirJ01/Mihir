@@ -12,10 +12,20 @@ export interface User {
   board?: string;
 }
 
-const ADMIN_GOOGLE_EMAILS = (import.meta.env.VITE_ADMIN_GOOGLE_EMAILS as string | undefined)
-  ?.split(",")
-  .map((email) => email.trim().toLowerCase())
-  .filter(Boolean) ?? ["mihirclassesofficial@gmail.com"];
+const parseAdminEmails = () => {
+  const raw = import.meta.env.VITE_ADMIN_GOOGLE_EMAILS as string | undefined;
+
+  if (!raw) {
+    return [];
+  }
+
+  return raw
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
+};
+
+const ADMIN_GOOGLE_EMAILS = parseAdminEmails();
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -31,6 +41,10 @@ export function useAuth() {
       throw new Error("Google account email is required.");
     }
 
+    if (ADMIN_GOOGLE_EMAILS.length === 0) {
+      throw new Error("Admin allowlist is not configured. Please set VITE_ADMIN_GOOGLE_EMAILS in deployed environment.");
+    }
+
     if (isAdmin) {
       const displayName =
         (typeof supabaseUser.user_metadata?.name === "string" && supabaseUser.user_metadata.name.trim()) ||
@@ -38,7 +52,7 @@ export function useAuth() {
         emailPrefix ||
         "Admin";
 
-      await supabase.from("user_profiles").upsert({
+      const { error: adminUpsertError } = await supabase.from("user_profiles").upsert({
         id: supabaseUser.id,
         email,
         role: "admin",
@@ -46,6 +60,10 @@ export function useAuth() {
         class: null,
         board: null,
       });
+
+      if (adminUpsertError) {
+        throw adminUpsertError;
+      }
 
       setUser({
         id: supabaseUser.id,
@@ -59,7 +77,7 @@ export function useAuth() {
 
     const { data: student, error: studentError } = await supabase
       .from("students")
-      .select("id, username, class, board, name")
+      .select("id, username, class, board")
       .or(`username.eq.${email},username.eq.${emailPrefix}`)
       .maybeSingle();
 
@@ -68,10 +86,10 @@ export function useAuth() {
     }
 
     if (!student) {
-      throw new Error("This Google account is not authorized as admin or admitted student.");
+      throw new Error("This Google account is not authorized. Contact admin after admission.");
     }
 
-    await supabase.from("user_profiles").upsert({
+    const { error: studentUpsertError } = await supabase.from("user_profiles").upsert({
       id: supabaseUser.id,
       email,
       role: "user",
@@ -79,6 +97,10 @@ export function useAuth() {
       class: student.class,
       board: student.board,
     });
+
+    if (studentUpsertError) {
+      throw studentUpsertError;
+    }
 
     setUser({
       id: student.id,

@@ -74,27 +74,58 @@ Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-trick
 
 ## Authentication (Google Only)
 
-This project now uses Supabase Auth for **student** and **admin** authentication:
+This project uses a **single Google login flow** for both admin and students.
 
-- Everyone signs in with Google only.
-- Admin panel opens only for allowlisted admin Google accounts.
-- Non-admin Google accounts are treated as students only if their account matches an admitted student record in `students` (`username` equal to email or email prefix).
-- Role-aware profiles are stored in `public.user_profiles`.
+- No email/password auth.
+- No separate student/admin login panels.
+- Admin panel access is controlled only by Google email allowlist.
 
-### Required Supabase setup
+### Production Supabase setup (for deployed project)
 
-1. In Supabase Dashboard → **Authentication → Providers → Google**, enable Google and configure:
-   - Client ID
-   - Client Secret
-2. Add redirect URL:
-   - `https://<your-domain>/app`
-   - `http://localhost:4173/app` (for local testing)
-3. Run Supabase migration to create `public.user_profiles` and RLS policies.
-4. Set admin allowlist env var in your frontend runtime:
-   - `VITE_ADMIN_GOOGLE_EMAILS=admin1@gmail.com,admin2@gmail.com`
+#### 1) Enable Google provider in Supabase
+1. Open **Supabase Dashboard → Authentication → Providers → Google**.
+2. Enable Google provider.
+3. Paste your Google OAuth **Client ID** and **Client Secret**.
+4. Save.
 
-### How role assignment works
+#### 2) Configure Google Cloud OAuth correctly
+1. Open **Google Cloud Console → APIs & Services → Credentials**.
+2. Create (or edit) an **OAuth 2.0 Client ID** (Web application).
+3. Add **Authorized redirect URI** exactly as shown in Supabase:
+   - `https://<PROJECT-REF>.supabase.co/auth/v1/callback`
+4. Add **Authorized JavaScript origin**:
+   - `https://<your-production-domain>`
+5. Publish OAuth consent screen if required.
 
-- If Google email is in `VITE_ADMIN_GOOGLE_EMAILS`, user gets `admin` role and can access admin panel.
-- Otherwise, app checks `students` table and allows student access only when `students.username` matches either full Google email or its prefix (before `@`).
-- If neither rule matches, login is rejected.
+#### 3) Configure Supabase URL settings
+In **Supabase → Authentication → URL Configuration**:
+- **Site URL** = `https://<your-production-domain>`
+- **Redirect URLs** include:
+  - `https://<your-production-domain>/app`
+
+#### 4) Set production frontend env var (critical)
+In your hosting provider (Vercel/Netlify/etc), set:
+
+- `VITE_ADMIN_GOOGLE_EMAILS=your-google@gmail.com`
+
+If multiple admins:
+
+- `VITE_ADMIN_GOOGLE_EMAILS=admin1@gmail.com,admin2@gmail.com`
+
+> Admin access works **only** for emails in this variable.
+
+#### 5) Apply database migration in production
+Run your Supabase migration so `public.user_profiles` exists with RLS policies.
+
+### Role assignment in production
+
+- If signed-in Google email is in `VITE_ADMIN_GOOGLE_EMAILS` → user becomes **admin** and can access admin panel.
+- Else app checks admitted `students` table by `username` matching full Google email or prefix before `@`.
+- If no admitted student match exists → login is rejected.
+
+### Example for your account
+If your Google account is `myname@gmail.com`, set production env exactly:
+
+- `VITE_ADMIN_GOOGLE_EMAILS=myname@gmail.com`
+
+Then redeploy the frontend so the new env is used.
