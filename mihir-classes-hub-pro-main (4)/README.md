@@ -146,3 +146,26 @@ Fix steps:
 2. In Vercel, redeploy the latest commit (or click **Clear build cache and redeploy**).
 3. Confirm project root is `mihir-classes-hub-pro-main (4)` if this monorepo root is connected.
 4. Run local verification before pushing: `npm run build`.
+## Authentication (Email + Google)
+
+This project now uses Supabase Auth for **student** and **admin** authentication:
+
+- Email/password sign-in and registration.
+- Google OAuth sign-in/registration.
+- Role-aware profile storage in `public.user_profiles`.
+
+### Required Supabase setup
+
+1. In Supabase Dashboard → **Authentication → Providers → Google**, enable Google and configure:
+   - Client ID
+   - Client Secret
+2. Add redirect URL:
+   - `https://<your-domain>/app`
+   - `http://localhost:4173/app` (for local testing)
+3. Run Supabase migration to create `public.user_profiles` and RLS policies.
+
+### How role assignment works
+
+- In **Register** mode, user chooses role (`admin` or `student`) before account creation.
+- For Google OAuth registration, selected role is cached locally and persisted after OAuth callback.
+- Role and basic profile data are saved to `public.user_profiles`.
