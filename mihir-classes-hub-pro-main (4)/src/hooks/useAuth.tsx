@@ -12,11 +12,13 @@ export interface User {
   board?: string;
 }
 
+const DEFAULT_ADMIN_GOOGLE_EMAILS = ["mihirj010105@gmail.com", "prasad16th@gmail.com"];
+
 const parseAdminEmails = () => {
   const raw = import.meta.env.VITE_ADMIN_GOOGLE_EMAILS as string | undefined;
 
   if (!raw) {
-    return [];
+    return DEFAULT_ADMIN_GOOGLE_EMAILS;
   }
 
   return raw
@@ -39,10 +41,6 @@ export function useAuth() {
 
     if (!email) {
       throw new Error("Google account email is required.");
-    }
-
-    if (ADMIN_GOOGLE_EMAILS.length === 0) {
-      throw new Error("Admin allowlist is not configured. Please set VITE_ADMIN_GOOGLE_EMAILS in deployed environment.");
     }
 
     if (isAdmin) {

@@ -106,11 +106,11 @@ In **Supabase → Authentication → URL Configuration**:
 #### 4) Set production frontend env var (critical)
 In your hosting provider (Vercel/Netlify/etc), set:
 
-- `VITE_ADMIN_GOOGLE_EMAILS=your-google@gmail.com`
+- `VITE_ADMIN_GOOGLE_EMAILS=mihirj010105@gmail.com,prasad16th@gmail.com`
 
 If multiple admins:
 
-- `VITE_ADMIN_GOOGLE_EMAILS=admin1@gmail.com,admin2@gmail.com`
+- `VITE_ADMIN_GOOGLE_EMAILS=mihirj010105@gmail.com,prasad16th@gmail.com`
 
 > Admin access works **only** for emails in this variable.
 
@@ -124,8 +124,8 @@ Run your Supabase migration so `public.user_profiles` exists with RLS policies.
 - If no admitted student match exists → login is rejected.
 
 ### Example for your account
-If your Google account is `myname@gmail.com`, set production env exactly:
+Set production env for your admins exactly:
 
-- `VITE_ADMIN_GOOGLE_EMAILS=myname@gmail.com`
+- `VITE_ADMIN_GOOGLE_EMAILS=mihirj010105@gmail.com,prasad16th@gmail.com`
 
 Then redeploy the frontend so the new env is used.
