@@ -12,124 +12,87 @@ export interface User {
   board?: string;
 }
 
-interface RegisterPayload {
-  email: string;
-  password: string;
-  role: "admin";
-  name: string;
-}
-
-interface PendingProfile {
-  role: "admin" | "user";
-  name: string;
-  class?: string;
-  board?: string;
-}
-
-const PENDING_PROFILE_KEY = "mihir-auth-pending-profile";
-const LOCAL_STUDENT_USER_KEY = "mihir-local-student-user";
+const ADMIN_GOOGLE_EMAILS = (import.meta.env.VITE_ADMIN_GOOGLE_EMAILS as string | undefined)
+  ?.split(",")
+  .map((email) => email.trim().toLowerCase())
+  .filter(Boolean) ?? ["mihirclassesofficial@gmail.com"];
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
 
-  const getPendingProfile = (): PendingProfile | null => {
-    const raw = localStorage.getItem(PENDING_PROFILE_KEY);
-    if (!raw) return null;
+  const hydrateGoogleUser = useCallback(async (supabaseUser: SupabaseUser) => {
+    const email = (supabaseUser.email ?? "").toLowerCase();
+    const emailPrefix = email.split("@")[0] ?? "";
+    const isAdmin = ADMIN_GOOGLE_EMAILS.includes(email);
 
-    try {
-      return JSON.parse(raw) as PendingProfile;
-    } catch {
-      localStorage.removeItem(PENDING_PROFILE_KEY);
-      return null;
+    if (!email) {
+      throw new Error("Google account email is required.");
     }
-  };
 
-  const clearPendingProfile = () => {
-    localStorage.removeItem(PENDING_PROFILE_KEY);
-  };
+    if (isAdmin) {
+      const displayName =
+        (typeof supabaseUser.user_metadata?.name === "string" && supabaseUser.user_metadata.name.trim()) ||
+        (typeof supabaseUser.user_metadata?.full_name === "string" && supabaseUser.user_metadata.full_name.trim()) ||
+        emailPrefix ||
+        "Admin";
 
-  const getLocalStudent = (): User | null => {
-    const raw = localStorage.getItem(LOCAL_STUDENT_USER_KEY);
-    if (!raw) return null;
+      await supabase.from("user_profiles").upsert({
+        id: supabaseUser.id,
+        email,
+        role: "admin",
+        name: displayName,
+        class: null,
+        board: null,
+      });
 
-    try {
-      const parsed = JSON.parse(raw) as User;
-      return parsed.role === "user" ? parsed : null;
-    } catch {
-      localStorage.removeItem(LOCAL_STUDENT_USER_KEY);
-      return null;
-    }
-  };
-
-  const clearLocalStudent = () => {
-    localStorage.removeItem(LOCAL_STUDENT_USER_KEY);
-  };
-
-  const upsertProfile = useCallback(async (supabaseUser: SupabaseUser) => {
-    const { data: existingProfile } = await supabase
-      .from("user_profiles")
-      .select("role, name, class, board")
-      .eq("id", supabaseUser.id)
-      .maybeSingle();
-
-    if (existingProfile) {
       setUser({
         id: supabaseUser.id,
-        role: existingProfile.role,
-        name: existingProfile.name,
-        email: supabaseUser.email ?? "",
-        class: existingProfile.class ?? undefined,
-        board: existingProfile.board ?? undefined,
+        role: "admin",
+        name: displayName,
+        email,
         loginTime: new Date().toISOString(),
       });
       return;
     }
 
-    const pendingProfile = getPendingProfile();
-    const metadata = supabaseUser.user_metadata ?? {};
+    const { data: student, error: studentError } = await supabase
+      .from("students")
+      .select("id, username, class, board, name")
+      .or(`username.eq.${email},username.eq.${emailPrefix}`)
+      .maybeSingle();
 
-    const role = metadata.role === "admin" ? "admin" : pendingProfile?.role ?? "admin";
-    const name =
-      (typeof metadata.name === "string" && metadata.name.trim()) ||
-      (typeof metadata.full_name === "string" && metadata.full_name.trim()) ||
-      pendingProfile?.name ||
-      supabaseUser.email?.split("@")[0] ||
-      "Admin";
-
-    const { error: upsertError } = await supabase.from("user_profiles").upsert({
-      id: supabaseUser.id,
-      email: supabaseUser.email ?? "",
-      role,
-      name,
-      class: null,
-      board: null,
-    });
-
-    if (upsertError) {
-      throw upsertError;
+    if (studentError) {
+      throw studentError;
     }
 
-    clearPendingProfile();
+    if (!student) {
+      throw new Error("This Google account is not authorized as admin or admitted student.");
+    }
+
+    await supabase.from("user_profiles").upsert({
+      id: supabaseUser.id,
+      email,
+      role: "user",
+      name: student.username,
+      class: student.class,
+      board: student.board,
+    });
 
     setUser({
-      id: supabaseUser.id,
-      role,
-      name,
-      email: supabaseUser.email ?? "",
+      id: student.id,
+      role: "user",
+      name: student.username,
+      email,
+      class: student.class,
+      board: student.board,
       loginTime: new Date().toISOString(),
     });
   }, []);
 
   useEffect(() => {
     const syncSession = async () => {
-      const localStudent = getLocalStudent();
-      if (localStudent) {
-        setUser(localStudent);
-        setLoading(false);
-        return;
-      }
-
       const { data } = await supabase.auth.getSession();
       if (!data.session?.user) {
         setUser(null);
@@ -137,112 +100,44 @@ export function useAuth() {
         return;
       }
 
-      await upsertProfile(data.session.user);
-      setLoading(false);
+      try {
+        await hydrateGoogleUser(data.session.user);
+      } catch (error) {
+        await supabase.auth.signOut();
+        setUser(null);
+        setAuthError(error instanceof Error ? error.message : "Google authentication failed.");
+      } finally {
+        setLoading(false);
+      }
     };
 
     syncSession();
 
     const { data: subscription } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (!session?.user) {
-        const localStudent = getLocalStudent();
-        setUser(localStudent);
+        setUser(null);
         setLoading(false);
         return;
       }
 
-      clearLocalStudent();
-      await upsertProfile(session.user);
-      setLoading(false);
+      try {
+        await hydrateGoogleUser(session.user);
+      } catch (error) {
+        await supabase.auth.signOut();
+        setUser(null);
+        setAuthError(error instanceof Error ? error.message : "Google authentication failed.");
+      } finally {
+        setLoading(false);
+      }
     });
 
     return () => {
       subscription.subscription.unsubscribe();
     };
-  }, [upsertProfile]);
+  }, [hydrateGoogleUser]);
 
-  const loginStudentWithCredentials = async (username: string, password: string) => {
-    const { data: student, error } = await supabase
-      .from("students")
-      .select("id, username, class, board")
-      .eq("username", username)
-      .eq("password", password)
-      .maybeSingle();
-
-    if (error) {
-      throw error;
-    }
-
-    if (!student) {
-      throw new Error("Invalid username or password.");
-    }
-
-    await supabase.auth.signOut();
-
-    const studentUser: User = {
-      id: student.id,
-      role: "user",
-      name: student.username,
-      email: "",
-      class: student.class,
-      board: student.board,
-      loginTime: new Date().toISOString(),
-    };
-
-    localStorage.setItem(LOCAL_STUDENT_USER_KEY, JSON.stringify(studentUser));
-    setUser(studentUser);
-  };
-
-  const loginWithEmail = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      throw error;
-    }
-  };
-
-  const registerWithEmail = async ({ email, password, role, name }: RegisterPayload) => {
-    localStorage.setItem(PENDING_PROFILE_KEY, JSON.stringify({ role, name }));
-
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          role,
-          name,
-        },
-      },
-    });
-
-    if (error) {
-      clearPendingProfile();
-      throw error;
-    }
-
-    if (data.session?.user) {
-      const { error: upsertError } = await supabase.from("user_profiles").upsert({
-        id: data.session.user.id,
-        email,
-        role,
-        name,
-        class: null,
-        board: null,
-      });
-
-      if (upsertError) {
-        throw upsertError;
-      }
-
-      clearPendingProfile();
-    }
-
-    return data;
-  };
-
-  const loginWithGoogle = async (pendingProfile?: PendingProfile) => {
-    if (pendingProfile) {
-      localStorage.setItem(PENDING_PROFILE_KEY, JSON.stringify(pendingProfile));
-    }
+  const loginWithGoogle = async () => {
+    setAuthError(null);
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -252,16 +147,16 @@ export function useAuth() {
     });
 
     if (error) {
-      clearPendingProfile();
       throw error;
     }
   };
 
+  const clearAuthError = () => setAuthError(null);
+
   const logout = async () => {
     await supabase.auth.signOut();
-    clearPendingProfile();
-    clearLocalStudent();
     setUser(null);
+    setAuthError(null);
   };
 
   const isAdmin = user?.role === "admin";
@@ -271,9 +166,8 @@ export function useAuth() {
   return {
     user,
     loading,
-    loginStudentWithCredentials,
-    loginWithEmail,
-    registerWithEmail,
+    authError,
+    clearAuthError,
     loginWithGoogle,
     logout,
     isAdmin,

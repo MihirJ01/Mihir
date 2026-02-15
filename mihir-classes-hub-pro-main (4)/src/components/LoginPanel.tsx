@@ -1,133 +1,33 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
-import {
-  Lock,
-  User,
-  Sparkles,
-  BookOpen,
-  Target,
-  Star,
-  UserCircle,
-  X,
-  School,
-  Mail,
-} from "lucide-react";
+import { User, Sparkles, BookOpen, Target, Star, X, School } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 
-type AuthMode = "signin" | "register";
-type UserRole = "admin" | "user";
-
 export function LoginPanel() {
-  const [mode, setMode] = useState<AuthMode>("signin");
-  const [role, setRole] = useState<UserRole>("user");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
-
-  const { loginStudentWithCredentials, loginWithEmail, registerWithEmail, loginWithGoogle } = useAuth();
+  const { loginWithGoogle, authError, clearAuthError } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const isStudentLogin = mode === "signin" && role === "user";
-  const isAdminLogin = mode === "signin" && role === "admin";
-  const isAdminRegister = mode === "register";
+  useEffect(() => {
+    if (!authError) return;
 
-  const handleAuth = async () => {
-    if (isStudentLogin) {
-      if (!username || !password) {
-        toast({
-          title: "Missing details",
-          description: "Please enter username and password.",
-          variant: "destructive",
-        });
-        return;
-      }
+    toast({
+      title: "Authentication failed",
+      description: authError,
+      variant: "destructive",
+    });
 
-      setSubmitting(true);
-      try {
-        await loginStudentWithCredentials(username, password);
-        toast({ title: "Signed in", description: "Welcome student!" });
-      } catch (error: unknown) {
-        toast({
-          title: "Authentication failed",
-          description: error instanceof Error ? error.message : "Please try again.",
-          variant: "destructive",
-        });
-      } finally {
-        setSubmitting(false);
-      }
-      return;
-    }
-
-    if (!email || !password) {
-      toast({
-        title: "Missing details",
-        description: "Please enter email and password.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (isAdminRegister && !name) {
-      toast({
-        title: "Missing details",
-        description: "Please add your display name.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      if (isAdminLogin) {
-        await loginWithEmail(email, password);
-        toast({ title: "Signed in", description: "Welcome back admin!" });
-      } else {
-        const { user } = await registerWithEmail({
-          email,
-          password,
-          role: "admin",
-          name,
-        });
-
-        toast({
-          title: "Registration successful",
-          description: user?.identities?.length
-            ? "Admin account created."
-            : "Account exists. Please verify email if required and sign in.",
-        });
-
-        setMode("signin");
-        setRole("admin");
-      }
-    } catch (error: unknown) {
-      toast({
-        title: "Authentication failed",
-        description: error instanceof Error ? error.message : "Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
+    clearAuthError();
+  }, [authError, clearAuthError, toast]);
 
   const handleGoogleSignIn = async () => {
     setSubmitting(true);
     try {
-      await loginWithGoogle({ role: "admin", name: name || email.split("@")[0] || "Admin" });
+      await loginWithGoogle();
     } catch (error: unknown) {
       toast({
         title: "Google authentication failed",
@@ -188,86 +88,22 @@ export function LoginPanel() {
             </div>
             <CardTitle className="text-3xl font-bold tracking-wider text-gray-900">Mihir Classes</CardTitle>
             <p className="text-sm text-gray-700 mt-2">
-              {isStudentLogin
-                ? "Student login with admin-provided credentials"
-                : mode === "signin"
-                  ? "Admin sign in with Email or Google"
-                  : "Admin registration only"}
+              Continue with Google to access Student or Admin panel.
             </p>
           </CardHeader>
           <CardContent className="space-y-4 px-8 pb-8">
-            <div className="grid grid-cols-2 gap-2">
-              <Button variant={mode === "signin" ? "default" : "outline"} onClick={() => setMode("signin")}>
-                Sign In
-              </Button>
-              <Button variant={mode === "register" ? "default" : "outline"} onClick={() => {
-                setMode("register");
-                setRole("admin");
-              }}>
-                Admin Register
-              </Button>
-            </div>
-
-            {mode === "signin" && (
-              <Select value={role} onValueChange={(value: UserRole) => setRole(value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="user">Student</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-
-            {isAdminRegister && (
-              <div className="relative">
-                <UserCircle className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500/70" />
-                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Admin Name" className="pl-10" />
-              </div>
-            )}
-
-            {isStudentLogin ? (
-              <>
-                <div className="relative">
-                  <UserCircle className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500/70" />
-                  <Input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Student Username" className="pl-10" />
-                </div>
-
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500/70" />
-                  <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" className="pl-10" />
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500/70" />
-                  <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Admin Email" className="pl-10" />
-                </div>
-
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500/70" />
-                  <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" className="pl-10" />
-                </div>
-              </>
-            )}
-
-            <Button onClick={handleAuth} className="w-full" disabled={submitting}>
-              {isStudentLogin ? "Student Sign In" : mode === "signin" ? "Admin Sign In" : "Create Admin Account"}
+            <Button
+              onClick={handleGoogleSignIn}
+              variant="default"
+              className="w-full flex items-center gap-2"
+              disabled={submitting}
+            >
+              <User className="h-4 w-4" />
+              Continue with Google
             </Button>
-
-            {!isStudentLogin && (
-              <Button
-                onClick={handleGoogleSignIn}
-                variant="outline"
-                className="w-full flex items-center gap-2"
-                disabled={submitting}
-              >
-                <User className="h-4 w-4" />
-                Continue with Google (Admin)
-              </Button>
-            )}
+            <p className="text-center text-xs text-gray-600">
+              Admin panel opens only for allowed admin Google accounts.
+            </p>
           </CardContent>
         </Card>
       </div>

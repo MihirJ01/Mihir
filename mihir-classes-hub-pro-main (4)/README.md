@@ -72,14 +72,14 @@ To connect a domain, navigate to Project > Settings > Domains and click Connect 
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
 
-## Authentication (Email + Google)
+## Authentication (Google Only)
 
 This project now uses Supabase Auth for **student** and **admin** authentication:
 
-- Student login only via admin-provided `username` + `password` from `students` table.
-- Admin email/password sign-in and registration.
-- Admin Google OAuth sign-in/registration.
-- Role-aware admin profile storage in `public.user_profiles`.
+- Everyone signs in with Google only.
+- Admin panel opens only for allowlisted admin Google accounts.
+- Non-admin Google accounts are treated as students only if their account matches an admitted student record in `students` (`username` equal to email or email prefix).
+- Role-aware profiles are stored in `public.user_profiles`.
 
 ### Required Supabase setup
 
@@ -90,9 +90,11 @@ This project now uses Supabase Auth for **student** and **admin** authentication
    - `https://<your-domain>/app`
    - `http://localhost:4173/app` (for local testing)
 3. Run Supabase migration to create `public.user_profiles` and RLS policies.
+4. Set admin allowlist env var in your frontend runtime:
+   - `VITE_ADMIN_GOOGLE_EMAILS=admin1@gmail.com,admin2@gmail.com`
 
 ### How role assignment works
 
-- Students cannot self-register; they must use credentials created by admins during admission.
-- Admin registration/sign-in can use email/password or Google OAuth.
-- Admin profile data is saved to `public.user_profiles`.
+- If Google email is in `VITE_ADMIN_GOOGLE_EMAILS`, user gets `admin` role and can access admin panel.
+- Otherwise, app checks `students` table and allows student access only when `students.username` matches either full Google email or its prefix (before `@`).
+- If neither rule matches, login is rejected.
