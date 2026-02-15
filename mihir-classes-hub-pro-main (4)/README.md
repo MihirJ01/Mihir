@@ -158,3 +158,104 @@ Fix steps:
 3. Run local build: `npm run build`.
 4. Push the fixed commit and redeploy from that commit.
 5. If Vercel still fails, use **Clear build cache and redeploy**.
+
+
+## Google Sign-In `redirect_uri_mismatch` (Detailed Fix Guide)
+
+If you see this on Google login:
+
+- **Access blocked: This app’s request is invalid**
+- **Error 400: redirect_uri_mismatch**
+
+it means the OAuth callback URL configured in **Google Cloud** does not exactly match what **Supabase** is using.
+
+### Why this happens
+
+Google validates the OAuth callback URL with exact-string matching. A small difference breaks login:
+- wrong project ref,
+- http vs https,
+- trailing slash mismatch,
+- old domain still configured,
+- callback configured as `/app` instead of Supabase callback.
+
+### The 3 URLs you must understand
+
+1. **Google Authorized redirect URI** (in Google Cloud)
+   - Must be Supabase callback:
+   - `https://aorpjttyeulrzitvpjkr.supabase.co/auth/v1/callback`
+2. **Supabase Redirect URL** (in Supabase URL Configuration)
+   - Your frontend route after auth, for example:
+   - `https://<your-domain>/app`
+3. **Frontend redirectTo** (from app code)
+   - Should also be your app route, for example:
+   - `https://<your-domain>/app`
+
+> Google checks #1. Supabase and your app use #2/#3.
+
+### Exact production checklist (do in this order)
+
+#### Step 1: Google Cloud Console
+Go to **Google Cloud → APIs & Services → Credentials → OAuth 2.0 Client ID (Web app)** and configure:
+
+- **Authorized JavaScript origins**:
+  - `https://<your-domain>`
+- **Authorized redirect URIs**:
+  - `https://aorpjttyeulrzitvpjkr.supabase.co/auth/v1/callback`
+
+Do **not** put `/app` here.
+
+#### Step 2: Supabase Auth Provider
+Go to **Supabase → Authentication → Providers → Google**:
+- Enable Google provider.
+- Paste the same Google OAuth Client ID and Client Secret.
+- Save.
+
+#### Step 3: Supabase URL Configuration
+Go to **Supabase → Authentication → URL Configuration**:
+- **Site URL**: `https://<your-domain>`
+- **Redirect URLs** include:
+  - `https://<your-domain>/app`
+
+#### Step 4: Frontend environment variables (Vercel)
+In Vercel project settings, set:
+
+```env
+VITE_ADMIN_GOOGLE_EMAILS=mihirj010105@gmail.com,prasad16th@gmail.com
+VITE_AUTH_REDIRECT_URL=https://<your-domain>/app
+```
+
+Then redeploy.
+
+#### Step 5: Clear stale deployment/cache
+- Redeploy latest commit.
+- If still failing, run **Clear build cache and redeploy** in Vercel.
+- Open login in an incognito window to avoid stale auth cookies.
+
+### Local development settings (optional)
+If you test locally too, add both local and production entries:
+
+- **Google Authorized JavaScript origin**:
+  - `http://localhost:4173`
+- **Supabase Redirect URLs**:
+  - `http://localhost:4173/app`
+
+> Google redirect URI remains Supabase callback (`.../auth/v1/callback`), not localhost callback.
+
+### Fast diagnosis table
+
+- **Message: `redirect_uri_mismatch` immediately on Google page**
+  - Root cause: Google Cloud Authorized redirect URI is wrong.
+- **Google login succeeds, then app says unauthorized**
+  - Root cause: account not in `VITE_ADMIN_GOOGLE_EMAILS` and no admitted student match.
+- **Works locally, fails on deployed domain**
+  - Root cause: missing production domain in origins/redirects or missing `VITE_AUTH_REDIRECT_URL`.
+
+### One-minute verification commands
+
+```bash
+# Ensure clean build locally before deploy
+npm run build
+
+# Optional: verify no merge conflict artifacts remain
+rg -n "^(<<<<<<<|=======|>>>>>>>)" src README.md supabase
+```
