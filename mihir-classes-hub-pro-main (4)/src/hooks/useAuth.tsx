@@ -12,6 +12,22 @@ export interface User {
   board?: string;
 }
 
+const DEFAULT_ADMIN_GOOGLE_EMAILS = ["mihirj010105@gmail.com", "prasad16th@gmail.com"];
+
+const parseAdminEmails = () => {
+  const raw = import.meta.env.VITE_ADMIN_GOOGLE_EMAILS as string | undefined;
+
+  if (!raw) {
+    return DEFAULT_ADMIN_GOOGLE_EMAILS;
+  }
+
+  return raw
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
+};
+
+const ADMIN_GOOGLE_EMAILS = parseAdminEmails();
 interface RegisterPayload {
   email: string;
   password: string;
@@ -33,6 +49,72 @@ const PENDING_PROFILE_KEY = "mihir-auth-pending-profile";
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  const hydrateGoogleUser = useCallback(async (supabaseUser: SupabaseUser) => {
+    const email = (supabaseUser.email ?? "").toLowerCase();
+    const emailPrefix = email.split("@")[0] ?? "";
+    const isAdmin = ADMIN_GOOGLE_EMAILS.includes(email);
+
+    if (!email) {
+      throw new Error("Google account email is required.");
+    }
+
+    if (isAdmin) {
+      const displayName =
+        (typeof supabaseUser.user_metadata?.name === "string" && supabaseUser.user_metadata.name.trim()) ||
+        (typeof supabaseUser.user_metadata?.full_name === "string" && supabaseUser.user_metadata.full_name.trim()) ||
+        emailPrefix ||
+        "Admin";
+
+      const { error: adminUpsertError } = await supabase.from("user_profiles").upsert({
+        id: supabaseUser.id,
+        email,
+        role: "admin",
+        name: displayName,
+        class: null,
+        board: null,
+      });
+
+      if (adminUpsertError) {
+        throw adminUpsertError;
+      }
+
+      setUser({
+        id: supabaseUser.id,
+        role: "admin",
+        name: displayName,
+        email,
+        loginTime: new Date().toISOString(),
+      });
+      return;
+    }
+
+    const { data: student, error: studentError } = await supabase
+      .from("students")
+      .select("id, username, class, board")
+      .or(`username.eq.${email},username.eq.${emailPrefix}`)
+      .maybeSingle();
+
+    if (studentError) {
+      throw studentError;
+    }
+
+    if (!student) {
+      throw new Error("This Google account is not authorized. Contact admin after admission.");
+    }
+
+    const { error: studentUpsertError } = await supabase.from("user_profiles").upsert({
+      id: supabaseUser.id,
+      email,
+      role: "user",
+      name: student.username,
+      class: student.class,
+      board: student.board,
+    });
+
+    if (studentUpsertError) {
+      throw studentUpsertError;
 
   const getPendingProfile = (): PendingProfile | null => {
     const raw = localStorage.getItem(PENDING_PROFILE_KEY);
@@ -57,6 +139,15 @@ export function useAuth() {
       .eq("id", supabaseUser.id)
       .maybeSingle();
 
+    setUser({
+      id: student.id,
+      role: "user",
+      name: student.username,
+      email,
+      class: student.class,
+      board: student.board,
+      loginTime: new Date().toISOString(),
+    });
     if (existingProfile) {
       const hydratedUser: User = {
         id: supabaseUser.id,
@@ -134,12 +225,38 @@ export function useAuth() {
         return;
       }
 
+      try {
+        await hydrateGoogleUser(data.session.user);
+      } catch (error) {
+        await supabase.auth.signOut();
+        setUser(null);
+        setAuthError(error instanceof Error ? error.message : "Google authentication failed.");
+      } finally {
+        setLoading(false);
+      }
       await upsertProfile(data.session.user);
       setLoading(false);
     };
 
     syncSession();
 
+    const { data: subscription } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!session?.user) {
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        await hydrateGoogleUser(session.user);
+      } catch (error) {
+        await supabase.auth.signOut();
+        setUser(null);
+        setAuthError(error instanceof Error ? error.message : "Google authentication failed.");
+      } finally {
+        setLoading(false);
+      }
+    });
     const { data: subscription } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         if (!session?.user) {
@@ -156,6 +273,10 @@ export function useAuth() {
     return () => {
       subscription.subscription.unsubscribe();
     };
+  }, [hydrateGoogleUser]);
+
+  const loginWithGoogle = async () => {
+    setAuthError(null);
   }, [upsertProfile]);
 
   const loginWithEmail = async (email: string, password: string) => {
@@ -234,10 +355,15 @@ export function useAuth() {
     }
   };
 
+  const clearAuthError = () => setAuthError(null);
+
+  const logout = async () => {
+    await supabase.auth.signOut();
   const logout = async () => {
     await supabase.auth.signOut();
     clearPendingProfile();
     setUser(null);
+    setAuthError(null);
   };
 
   const isAdmin = user?.role === "admin";
@@ -247,6 +373,8 @@ export function useAuth() {
   return {
     user,
     loading,
+    authError,
+    clearAuthError,
     loginWithEmail,
     registerWithEmail,
     loginWithGoogle,
