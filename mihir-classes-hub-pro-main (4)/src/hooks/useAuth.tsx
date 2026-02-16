@@ -106,6 +106,88 @@ export function useAuth() {
 
     if (!student) {
       throw new Error("This Google account is not authorized. Contact admin after admission.");
+    }
+
+    const { error: studentUpsertError } = await supabase.from("user_profiles").upsert({
+      id: supabaseUser.id,
+      email,
+      role: "user",
+      name: student.username,
+      class: student.class,
+      board: student.board,
+    });
+
+    if (studentUpsertError) {
+      throw studentUpsertError;
+    }
+
+    setUser({
+      id: student.id,
+      role: "user",
+      name: student.username,
+      email,
+      class: student.class,
+      board: student.board,
+      loginTime: new Date().toISOString(),
+    });
+  }, []);
+
+  useEffect(() => {
+    const syncSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session?.user) {
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        await hydrateGoogleUser(data.session.user);
+      } catch (error) {
+        await supabase.auth.signOut();
+        setUser(null);
+        setAuthError(error instanceof Error ? error.message : "Google authentication failed.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+
+      const { error: adminUpsertError } = await supabase.from("user_profiles").upsert({
+        id: supabaseUser.id,
+        email,
+        role: "admin",
+        name: displayName,
+        class: null,
+        board: null,
+      });
+
+      if (adminUpsertError) {
+        throw adminUpsertError;
+      }
+
+      setUser({
+        id: supabaseUser.id,
+        role: "admin",
+        name: displayName,
+        email,
+        loginTime: new Date().toISOString(),
+      });
+      return;
+    }
+
+    const { data: student, error: studentError } = await supabase
+      .from("students")
+      .select("id, username, class, board")
+      .or(`username.eq.${email},username.eq.${emailPrefix}`)
+      .maybeSingle();
+
+    if (studentError) {
+      throw studentError;
+    }
+
+    if (!student) {
+      throw new Error("This Google account is not authorized. Contact admin after admission.");
 
   const getPendingProfile = (): PendingProfile | null => {
     const raw = localStorage.getItem(PENDING_PROFILE_KEY);

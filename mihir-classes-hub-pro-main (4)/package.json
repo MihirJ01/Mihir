@@ -9,6 +9,8 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
+    "prebuild": "npm run verify:loginpanel",
+    "verify:loginpanel": "node scripts/verify-loginpanel-integrity.mjs"
     "prebuild": "node scripts/verify-loginpanel-integrity.mjs"
   },
   "dependencies": {

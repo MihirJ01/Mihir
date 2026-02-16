@@ -207,11 +207,27 @@ This fails early if:
 ```bash
 # from project directory
 npm install
+
+# run integrity guard directly
+npm run verify:loginpanel
+
+# production build (includes integrity guard)
 npm run build
 
 # optional check for unresolved merge markers
 rg -n "^(<<<<<<<|=======|>>>>>>>)" src README.md supabase
 ```
+
+## If Vercel still shows an old broken LoginPanel
+
+Sometimes Vercel deploys an older branch/commit than your local `work` branch.
+
+Before redeploying, verify:
+
+1. Vercel project is connected to the same branch you just pushed.
+2. The deployed commit contains the latest `src/components/LoginPanel.tsx`.
+3. Run `npm run verify:loginpanel` locally and push only after it passes.
+4. In Vercel, use **Clear build cache and redeploy**.
 ## Authentication (Email + Google)
 
 This project now uses Supabase Auth for **student** and **admin** authentication:
