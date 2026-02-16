@@ -71,3 +71,238 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+
+## Authentication (Google Only)
+
+This app supports only Google sign-in for both admin and students.
+
+- No email/password login.
+- No student self-registration.
+- Admin access is granted only when the Google email is in `VITE_ADMIN_GOOGLE_EMAILS`.
+
+### How login works in this project
+
+1. User clicks **Continue with Google** on `/app`.
+2. App calls Supabase OAuth with `redirectTo`:
+   - `VITE_AUTH_REDIRECT_URL` if set
+   - otherwise fallback: `${window.location.origin}/app`
+3. After successful OAuth callback, app resolves role:
+   - email in admin allowlist => `admin`
+   - else must match an admitted record in `students` table => `user`
+4. App upserts/refreshes `user_profiles` for session continuity.
+
+---
+
+## `Error 400: redirect_uri_mismatch` (Access blocked) — Full Fix
+
+If Google shows:
+
+- **Access blocked: This app’s request is invalid**
+- **Error 400: redirect_uri_mismatch**
+
+then your OAuth redirect URL configuration is mismatched between Google Cloud and Supabase.
+
+### Important: 3 different URLs involved
+
+1. **Google Authorized redirect URI** (Google Cloud)
+   - Must be Supabase callback URL.
+2. **Supabase Redirect URLs** (Supabase Auth URL config)
+   - Must include your app route (`/app`).
+3. **Frontend redirectTo URL** (this app)
+   - Should point to deployed `/app` route.
+
+Google validates only #1 exactly.
+
+---
+
+## Production setup checklist (exact order)
+
+### 1) Google Cloud OAuth client
+Open: **Google Cloud → APIs & Services → Credentials → OAuth 2.0 Client ID (Web application)**
+
+Set:
+- **Authorized JavaScript origins**
+  - `https://<your-domain>`
+- **Authorized redirect URIs**
+  - `https://aorpjttyeulrzitvpjkr.supabase.co/auth/v1/callback`
+
+✅ Do not use `/app` in Google redirect URI.
+
+### 2) Supabase Google provider
+Open: **Supabase → Authentication → Providers → Google**
+
+- Enable provider
+- Paste Google OAuth client ID/secret
+- Save
+
+### 3) Supabase URL configuration
+Open: **Supabase → Authentication → URL Configuration**
+
+- **Site URL**: `https://<your-domain>`
+- **Redirect URLs** must include:
+  - `https://<your-domain>/app`
+
+### 4) Frontend env vars (Vercel/Netlify)
+Set these in hosting environment:
+
+```env
+VITE_ADMIN_GOOGLE_EMAILS=mihirj010105@gmail.com,prasad16th@gmail.com
+VITE_AUTH_REDIRECT_URL=https://<your-domain>/app
+```
+
+Redeploy after saving env vars.
+
+### 5) Database migration
+Run migration so this table exists in production:
+- `public.user_profiles`
+
+Migration file in repo:
+- `supabase/migrations/20260214000100_add_user_profiles_for_auth.sql`
+
+### 6) Clear stale deploy/session state
+- Redeploy latest commit
+- If needed: **Clear build cache and redeploy**
+- Test in incognito
+
+---
+
+## Why you are seeing this now
+
+If your Google page fails before returning to your app, it means callback mismatch (Google-side config) and not a frontend React bug.
+
+Common mistakes:
+- Wrong Supabase project ref in Google callback URL
+- Trailing slash mismatch
+- Old test domain in Google OAuth client
+- Missing production `/app` in Supabase Redirect URLs
+- Missing `VITE_AUTH_REDIRECT_URL` in deployed environment
+
+---
+
+## Quick diagnosis matrix
+
+- Fails on Google page with `redirect_uri_mismatch`
+  - Fix Google Authorized redirect URI (must be Supabase callback)
+- Google login succeeds but app denies admin
+  - Check `VITE_ADMIN_GOOGLE_EMAILS`
+- Works local but fails production
+  - Check production origin + redirect + env vars
+
+---
+
+## Build stability guard added
+
+To prevent broken `LoginPanel.tsx` deployments (like accidental imports inserted inside a function body), build now runs a prebuild integrity script:
+
+- `scripts/verify-loginpanel-integrity.mjs`
+
+This fails early if:
+- imports are found outside the top import block
+- merge conflict markers are present
+
+---
+
+## Useful commands
+
+```bash
+# from project directory
+npm install
+
+# run integrity guard directly
+npm run verify:loginpanel
+
+# production build (includes integrity guard)
+npm run build
+
+# optional check for unresolved merge markers
+rg -n "^(<<<<<<<|=======|>>>>>>>)" src README.md supabase
+```
+
+## If Vercel still shows an old broken LoginPanel
+
+Sometimes Vercel deploys an older branch/commit than your local `work` branch.
+
+Before redeploying, verify:
+
+1. Vercel project is connected to the same branch you just pushed.
+2. The deployed commit contains the latest `src/components/LoginPanel.tsx`.
+3. Run `npm run verify:loginpanel` locally and push only after it passes.
+4. In Vercel, use **Clear build cache and redeploy**.
+
+
+## Merge conflict resolution for `LoginPanel.tsx` (what to accept)
+
+If Git asks **Current / Incoming / Both** while merging auth changes, use this rule:
+
+- ✅ Prefer **Current change** for `src/components/LoginPanel.tsx` when your current branch already has the clean Google-only component.
+- ❌ Do **not** choose **Both changes** for `LoginPanel.tsx` unless you manually review line-by-line.
+  - "Both" is what usually duplicates content and creates broken imports inside functions.
+
+### Safe conflict workflow
+
+```bash
+# 1) See conflicted files
+git status
+
+# 2) For LoginPanel, keep your clean version
+git checkout --ours src/components/LoginPanel.tsx
+
+# 3) For docs or other files, resolve manually (or choose theirs if needed)
+# git checkout --theirs <file>
+
+# 4) Stage + verify
+git add src/components/LoginPanel.tsx
+npm run verify:loginpanel
+npm run build
+
+# 5) Commit merge
+git commit
+```
+
+### If you already merged with "Both" by mistake
+
+```bash
+# restore clean LoginPanel from your branch tip
+git checkout HEAD -- src/components/LoginPanel.tsx
+npm run verify:loginpanel
+npm run build
+```
+
+If verification passes locally but Vercel still fails, redeploy the **exact commit SHA** and use **Clear build cache and redeploy**.
+
+
+## If Google login returns to the same page (not opening admin panel)
+
+This usually means OAuth succeeded, but role authorization failed and app signed you out.
+
+Check these in order:
+
+1. Your Google email is in `VITE_ADMIN_GOOGLE_EMAILS` (exact email, lowercase preferred).
+2. If env var value is quoted in hosting (`"a@gmail.com,b@gmail.com"`), this project now strips wrapping quotes, but avoid extra spaces/newlines.
+3. If not admin, user must exist in `students` table (`username` = full email or email prefix).
+4. Confirm deployed env has:
+   - `VITE_AUTH_REDIRECT_URL=https://<your-domain>/app`
+5. Redeploy after env changes.
+
+Quick local verify:
+
+```bash
+npm run verify:loginpanel
+npm run build
+```
+
+
+### Why you may see "Authentication failed" even after Google success
+
+The app can show this toast when Google auth succeeds but role checks fail:
+
+- your email is not in admin allowlist, and
+- there is no admitted `students` row matching your email/full prefix.
+
+For admins, set env exactly:
+
+```env
+VITE_ADMIN_GOOGLE_EMAILS=mihirj010105@gmail.com,prasad16th@gmail.com
+```
+
+Then redeploy and test again.
