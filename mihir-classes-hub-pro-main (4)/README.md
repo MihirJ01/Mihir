@@ -207,31 +207,65 @@ This fails early if:
 ```bash
 # from project directory
 npm install
+
+# run integrity guard directly
+npm run verify:loginpanel
+
+# production build (includes integrity guard)
 npm run build
 
 # optional check for unresolved merge markers
 rg -n "^(<<<<<<<|=======|>>>>>>>)" src README.md supabase
 ```
-## Authentication (Email + Google)
 
-This project now uses Supabase Auth for **student** and **admin** authentication:
+## If Vercel still shows an old broken LoginPanel
 
-- Email/password sign-in and registration.
-- Google OAuth sign-in/registration.
-- Role-aware profile storage in `public.user_profiles`.
+Sometimes Vercel deploys an older branch/commit than your local `work` branch.
 
-### Required Supabase setup
+Before redeploying, verify:
 
-1. In Supabase Dashboard → **Authentication → Providers → Google**, enable Google and configure:
-   - Client ID
-   - Client Secret
-2. Add redirect URL:
-   - `https://<your-domain>/app`
-   - `http://localhost:4173/app` (for local testing)
-3. Run Supabase migration to create `public.user_profiles` and RLS policies.
+1. Vercel project is connected to the same branch you just pushed.
+2. The deployed commit contains the latest `src/components/LoginPanel.tsx`.
+3. Run `npm run verify:loginpanel` locally and push only after it passes.
+4. In Vercel, use **Clear build cache and redeploy**.
 
-### How role assignment works
 
-- In **Register** mode, user chooses role (`admin` or `student`) before account creation.
-- For Google OAuth registration, selected role is cached locally and persisted after OAuth callback.
-- Role and basic profile data are saved to `public.user_profiles`.
+## Merge conflict resolution for `LoginPanel.tsx` (what to accept)
+
+If Git asks **Current / Incoming / Both** while merging auth changes, use this rule:
+
+- ✅ Prefer **Current change** for `src/components/LoginPanel.tsx` when your current branch already has the clean Google-only component.
+- ❌ Do **not** choose **Both changes** for `LoginPanel.tsx` unless you manually review line-by-line.
+  - "Both" is what usually duplicates content and creates broken imports inside functions.
+
+### Safe conflict workflow
+
+```bash
+# 1) See conflicted files
+git status
+
+# 2) For LoginPanel, keep your clean version
+git checkout --ours src/components/LoginPanel.tsx
+
+# 3) For docs or other files, resolve manually (or choose theirs if needed)
+# git checkout --theirs <file>
+
+# 4) Stage + verify
+git add src/components/LoginPanel.tsx
+npm run verify:loginpanel
+npm run build
+
+# 5) Commit merge
+git commit
+```
+
+### If you already merged with "Both" by mistake
+
+```bash
+# restore clean LoginPanel from your branch tip
+git checkout HEAD -- src/components/LoginPanel.tsx
+npm run verify:loginpanel
+npm run build
+```
+
+If verification passes locally but Vercel still fails, redeploy the **exact commit SHA** and use **Clear build cache and redeploy**.
