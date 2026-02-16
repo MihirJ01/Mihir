@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "prebuild": "npm run verify:loginpanel",
     "verify:loginpanel": "node scripts/verify-loginpanel-integrity.mjs"
+    "prebuild": "node scripts/verify-loginpanel-integrity.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.1",
