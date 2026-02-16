@@ -269,3 +269,24 @@ npm run build
 ```
 
 If verification passes locally but Vercel still fails, redeploy the **exact commit SHA** and use **Clear build cache and redeploy**.
+
+
+## If Google login returns to the same page (not opening admin panel)
+
+This usually means OAuth succeeded, but role authorization failed and app signed you out.
+
+Check these in order:
+
+1. Your Google email is in `VITE_ADMIN_GOOGLE_EMAILS` (exact email, lowercase preferred).
+2. If env var value is quoted in hosting (`"a@gmail.com,b@gmail.com"`), this project now strips wrapping quotes, but avoid extra spaces/newlines.
+3. If not admin, user must exist in `students` table (`username` = full email or email prefix).
+4. Confirm deployed env has:
+   - `VITE_AUTH_REDIRECT_URL=https://<your-domain>/app`
+5. Redeploy after env changes.
+
+Quick local verify:
+
+```bash
+npm run verify:loginpanel
+npm run build
+```

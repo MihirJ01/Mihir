@@ -21,7 +21,7 @@ import { Memories } from "@/components/Memories";
 const AppDashboard = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { isLoggedIn, isAdmin, isUser, logout, loading } = useAuth();
+  const { isLoggedIn, isAdmin, isUser, logout, loading, loginWithGoogle, authError, clearAuthError } = useAuth();
   const isMobile = useIsMobile();
 
   if (loading) {
@@ -29,7 +29,7 @@ const AppDashboard = () => {
   }
 
   if (!isLoggedIn) {
-    return <LoginPanel />;
+    return <LoginPanel loginWithGoogle={loginWithGoogle} authError={authError} clearAuthError={clearAuthError} />;
   }
 
   if (isUser && !isAdmin) {

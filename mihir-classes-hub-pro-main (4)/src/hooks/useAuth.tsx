@@ -22,8 +22,8 @@ const parseAdminEmails = () => {
   }
 
   return raw
-    .split(",")
-    .map((email) => email.trim().toLowerCase())
+    .split(/[;,]/)
+    .map((email) => email.trim().replace(/^"|"$/g, "").replace(/^'|'$/g, "").toLowerCase())
     .filter(Boolean);
 };
 
@@ -88,7 +88,7 @@ export function useAuth() {
     }
 
     if (!student) {
-      throw new Error("This Google account is not authorized. Contact admin after admission.");
+      throw new Error(`Signed in as ${email}, but this account is not mapped as admin and no admitted student record was found. Contact admin.`);
     }
 
     const { error: studentUpsertError } = await supabase.from("user_profiles").upsert({
@@ -105,7 +105,7 @@ export function useAuth() {
     }
 
     setUser({
-      id: student.id,
+      id: supabaseUser.id,
       role: "user",
       name: student.username,
       email,

@@ -1,16 +1,20 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/useAuth";
 import { User, Sparkles, BookOpen, Target, Star, X, School } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 
 const LOGIN_SUBTITLE = "Continue with Google to access Student or Admin panel.";
 
-export function LoginPanel() {
+interface LoginPanelProps {
+  loginWithGoogle: () => Promise<void>;
+  authError: string | null;
+  clearAuthError: () => void;
+}
+
+export function LoginPanel({ loginWithGoogle, authError, clearAuthError }: LoginPanelProps) {
   const [submitting, setSubmitting] = useState(false);
-  const { loginWithGoogle, authError, clearAuthError } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
