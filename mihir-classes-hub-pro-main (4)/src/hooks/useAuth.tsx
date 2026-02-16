@@ -33,6 +33,8 @@ const OAUTH_REDIRECT_URL =
   (import.meta.env.VITE_AUTH_REDIRECT_URL as string | undefined)?.trim() ||
   `${window.location.origin}/app`;
 
+const AUTH_BOOT_TIMEOUT_MS = 10000;
+
 const shouldForceSignOut = (error: unknown) => {
   if (!(error instanceof Error)) {
     return true;
@@ -126,14 +128,23 @@ export function useAuth() {
 
   useEffect(() => {
     const syncSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (!data.session?.user) {
-        setUser(null);
-        setLoading(false);
-        return;
-      }
-
       try {
+        const sessionResult = await Promise.race([
+          supabase.auth.getSession(),
+          new Promise<never>((_, reject) => {
+            window.setTimeout(
+              () => reject(new Error("Authentication timed out. Please refresh and try again.")),
+              AUTH_BOOT_TIMEOUT_MS,
+            );
+          }),
+        ]);
+
+        const { data } = sessionResult;
+        if (!data.session?.user) {
+          setUser(null);
+          return;
+        }
+
         await hydrateGoogleUser(data.session.user);
       } catch (error) {
         if (shouldForceSignOut(error)) {
@@ -174,6 +185,17 @@ export function useAuth() {
       subscription.subscription.unsubscribe();
     };
   }, [hydrateGoogleUser]);
+
+  useEffect(() => {
+    if (!loading) return;
+
+    const timer = window.setTimeout(() => {
+      setLoading(false);
+      setAuthError((current) => current ?? "Authentication is taking too long. Please refresh and sign in again.");
+    }, AUTH_BOOT_TIMEOUT_MS + 2000);
+
+    return () => window.clearTimeout(timer);
+  }, [loading]);
 
   const loginWithGoogle = async () => {
     setAuthError(null);
