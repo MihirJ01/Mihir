@@ -290,3 +290,19 @@ Quick local verify:
 npm run verify:loginpanel
 npm run build
 ```
+
+
+### Why you may see "Authentication failed" even after Google success
+
+The app can show this toast when Google auth succeeds but role checks fail:
+
+- your email is not in admin allowlist, and
+- there is no admitted `students` row matching your email/full prefix.
+
+For admins, set env exactly:
+
+```env
+VITE_ADMIN_GOOGLE_EMAILS=mihirj010105@gmail.com,prasad16th@gmail.com
+```
+
+Then redeploy and test again.

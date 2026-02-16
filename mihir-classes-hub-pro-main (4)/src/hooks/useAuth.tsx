@@ -33,6 +33,15 @@ const OAUTH_REDIRECT_URL =
   (import.meta.env.VITE_AUTH_REDIRECT_URL as string | undefined)?.trim() ||
   `${window.location.origin}/app`;
 
+const shouldForceSignOut = (error: unknown) => {
+  if (!(error instanceof Error)) {
+    return true;
+  }
+
+  const message = error.message.toLowerCase();
+  return message.includes("not authorized") || message.includes("google account email is required");
+};
+
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -64,7 +73,7 @@ export function useAuth() {
       });
 
       if (adminUpsertError) {
-        throw adminUpsertError;
+        console.warn("Failed to upsert admin profile:", adminUpsertError.message);
       }
 
       setUser({
@@ -101,7 +110,7 @@ export function useAuth() {
     });
 
     if (studentUpsertError) {
-      throw studentUpsertError;
+      console.warn("Failed to upsert student profile:", studentUpsertError.message);
     }
 
     setUser({
@@ -127,8 +136,11 @@ export function useAuth() {
       try {
         await hydrateGoogleUser(data.session.user);
       } catch (error) {
-        await supabase.auth.signOut();
-        setUser(null);
+        if (shouldForceSignOut(error)) {
+          await supabase.auth.signOut();
+          setUser(null);
+        }
+
         setAuthError(error instanceof Error ? error.message : "Google authentication failed.");
       } finally {
         setLoading(false);
@@ -147,8 +159,11 @@ export function useAuth() {
       try {
         await hydrateGoogleUser(session.user);
       } catch (error) {
-        await supabase.auth.signOut();
-        setUser(null);
+        if (shouldForceSignOut(error)) {
+          await supabase.auth.signOut();
+          setUser(null);
+        }
+
         setAuthError(error instanceof Error ? error.message : "Google authentication failed.");
       } finally {
         setLoading(false);
